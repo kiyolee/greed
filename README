@@ -2,7 +2,9 @@
 
 This game is now maintained by Eric S. Raymond <esr@snark.thyrsus.com>.  Matt
 Day dropped out of sight and hasn't posted a new version or patch in four
-years.
+years.  You can surf to the latest version from
+
+	http://www.thyrsus.com/~esr/home.html
 
 The 3.1 version features better interrupt handling and the `p' suffix to
 GREEDOPTS.
