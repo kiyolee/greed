@@ -13,29 +13,34 @@ SFILE=/usr/games/lib/greed.hs
 # Location of game executable
 BIN=/usr/games
 
-CFLAGS=-O -s
-# For MSDOS:
-#CFLAGS=-Oilt -Gs
-# For Linux:
-CFLAGS = -I/usr/local/include -L/usr/local/lib
+# Flags for use with the Linux ncurses package (recommended)
+CFLAGS = -O -s -DNCURSES  -I/usr/local/include -L/usr/local/lib
+TERMLIB = -lncurses
+CC = gcc
 
-# You may need to modify the libraries used below according to your site,
-# e.g. -ltermcap for Berkeley and Xenix, -ltermlib for AT&T SYSV, -lncurses
-# for Linux, and scurses.lib for MSDOS with PCCurses.
-#LIBS=-lcurses -ltermcap
-#LIBS=-lcurses -ltermlib
-#LIBS=scurses.lib
-LIBS=-lncurses
+# Flags for use with stock curses
+# CFLAGS = -O -s
+# TERMLIB = -lcurses
+# CC = gcc
+
+# Flags for use with MS-DOS
+#CFLAGS=-Oilt -Gs
+#TERMLIB = scurses.lib
 
 greed: greed.c
-	cc -DSCOREFILE=\"$(SFILE)\" -D$(SYSDEF) -o greed greed.c $(CFLAGS) $(LIBS)
+	cc -DSCOREFILE=\"$(SFILE)\" -D$(SYSDEF) -o greed greed.c $(CFLAGS) $(TERMLIB)
 
 install: greed
 	cp greed $(BIN)
 	chmod 4711 $(BIN)/greed
 
+greed.tar:
+	tar cvf greed.tar READ.ME Makefile greed.c
+greed.tar.gz: greed.tar
+	gzip greed.tar
+
+greed.shar:
+	shar READ.ME Makefile greed.c >greed.shar
 clean:
 	rm -f *.o greed greed.tar
 
-tar:
-	tar cvf greed.tar READ.ME Makefile greed.c

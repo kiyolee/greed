@@ -43,7 +43,11 @@ static char *version = "Greed v3.1";
 #endif
 #include <ctype.h>
 
-#include <ncurses.h>	/* change this to curses.h on non-Linux systems */
+#ifdef NCURSES
+#include <ncurses.h>
+#else
+#include <curses.h>
+#endif NCURSES
 #include <signal.h>
 #ifndef MSDOS
 #include <pwd.h>
