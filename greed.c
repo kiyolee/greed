@@ -3,6 +3,15 @@
  *
  * Now maintained by Eric S. Raymond <esr@snark.thyrsus.com>.  Matt Day dropped
  * out of sight and hasn't posted a new version or patch in four years.
+ *
+ * 11/15/95 Fred C. Smith (Yes, the SAME Fred C. Smith who did the MS-DOS
+ *          version), fix the 'p' option so when it removes the highlight
+ *          from unused possible moves, it restores the previous color.
+ *          -Some minor changes in the way it behaves at the end of a game,
+ *          because I didn't like the way someone had changed it to work
+ *          since I saw it a few years ago (personal preference).
+ *          -Some style changes in the code, again personal preference.
+ *          fredex@fcshome.stoneham.ma.us
  */
 
 /* vi:set ts=8: Set tab break=8 in the "vi" editor */
@@ -36,18 +45,13 @@
  * defined.
  */
 
-static char *version = "Greed v3.1";
+static char *version = "Greed v3.2";
 
 #ifdef MSDOS
 #define NOTBSD
 #endif
 #include <ctype.h>
-
-#ifdef NCURSES
-#include <ncurses.h>
-#else
 #include <curses.h>
-#endif NCURSES
 #include <signal.h>
 #ifndef MSDOS
 #include <pwd.h>
@@ -68,7 +72,9 @@ static char *version = "Greed v3.1";
 #endif
 
 #ifdef NOTBSD
+#ifndef crmode
 #define crmode cbreak
+#endif
 #ifndef MSDOS
 #define random lrand48			/* use high quality random routines */
 #define srandom srand48
@@ -127,7 +133,7 @@ register backcur;
  * really wanted to quit, and if so, checks the high score stuff (with the  *
  * current score) and quits; otherwise, simply returns to the game.         */
 
-quit() {
+void quit() {
 	register ch;
 #ifdef NOTBSD
 	void (*osig)() = signal(SIGINT, SIG_IGN);	/* save old signal */
@@ -151,7 +157,7 @@ quit() {
 			(void) signal(SIGBREAK, osig);
 #endif
 			refresh();
-			return 1;
+			return;
 		}
 		move(23, 0);
 		refresh();
@@ -195,8 +201,8 @@ char *argv[];
 {
 	register val = 1;
 	extern long time();
-#ifdef A_COLOR
 	int attribs[9];
+#ifdef A_COLOR
 	char *colors;
 	extern char *getenv(), *strchr();
 #endif
@@ -232,6 +238,9 @@ char *argv[];
 #endif
 
 	initscr();				/* set up the terminal modes */
+#ifdef KEY_MIN
+	keypad(stdscr, TRUE);
+#endif /* KEY_MIN */
 	crmode();
 	noecho();
 
@@ -300,11 +309,11 @@ char *argv[];
 	standend();
 	grid[y][x] = 0;				/* eat initial square */
 
-	if (allmoves) showmoves(1);
+	if (allmoves) showmoves(1, attribs);
 	showscore();
 
-	while ((val = tunnel(getch())) > 0)	/* main loop, gives tunnel() *
-		continue;			 * user command              */
+	while ((val = tunnel(getch(), attribs)) > 0)	/* main loop, gives tunnel() */
+		continue;			 /* user command              */
 
 	if (!val) {				/* if didn't quit by 'q' cmd */
 		botmsg("Hit any key..", 0);	/* then let user examine     */
@@ -322,23 +331,36 @@ char *argv[];
 /* tunnel() does the main game work.  Returns 1 if everything's okay, 0 if *
  * user "died", and -1 if user specified and confirmed 'q' (fast quit).    */
 
-tunnel(cmd)
-register cmd;
+tunnel(cmd, attribs)
+register chtype cmd;
+int * attribs;
 {
 	register dy, dx, distance;
 	void help();
 
 	switch (cmd) {				/* process user command */
 	case 'h': case 'H': case '4':
+#ifdef KEY_LEFT
+	case KEY_LEFT:
+#endif /* KEY_LEFT */
 		dy = 0; dx = -1;
 		break;
 	case 'j': case 'J': case '2':
+#ifdef KEY_DOWN
+	case KEY_DOWN:
+#endif /* KEY_DOWN */
 		dy = 1; dx = 0;
 		break;
 	case 'k': case 'K': case '8':
+#ifdef KEY_UP
+	case KEY_UP:
+#endif /* KEY_UP */
 		dy = -1; dx = 0;
 		break;
 	case 'l': case 'L': case '6':
+#ifdef KEY_RIGHT
+	case KEY_RIGHT:
+#endif /* KEY_RIGHT */
 		dy = 0; dx = 1;
 		break;
 	case 'b': case 'B': case '1':
@@ -355,19 +377,20 @@ register cmd;
 		break;
 	case 'p': case 'P':
 		allmoves = !allmoves;
-		showmoves(allmoves);
+		showmoves(allmoves, attribs);
 		move(y, x);
 		refresh();
-		return 1;
+		return (1);
 	case 'q': case 'Q':
-		return quit();
+		quit();
+		return(-1);
 	case '?':
 		help();
-		return 1;
+		return (1);
 	case '\14': case '\22':			/* ^L or ^R (redraw) */
 		wrefresh(curscr);		/* falls through to return */
 	default:
-		return 1;
+		return (1);
 	}
 	distance = (y+dy >= 0 && x+dx >= 0 && y+dy < 22 && x+dx < 79) ?
 		grid[y+dy][x+dx] : 0;
@@ -392,15 +415,15 @@ register cmd;
 				}
 				mvaddch(y, x, '*');	/* with a '*' */
 				showscore();		/* print final score */
-				return 0;
+				return (0);
 			} else {		/* otherwise prevent bad move */
 				botmsg("Bad move.", 1);
-				return 1;
+				return (1);
 			}
 		} while (--d);
 	}
 
-	if (allmoves) showmoves(0);		/* remove possible moves */
+	if (allmoves) showmoves(0, attribs);		/* remove possible moves */
 
 	if (havebotmsg) {			/* if old bottom msg exists */
 		mvprintw(23, 40, "%s - Hit '?' for help.", version);
@@ -418,9 +441,9 @@ register cmd;
 	standout();
 	mvaddch(y, x, ME);			/* put new ME */
 	standend();
-	if (allmoves) showmoves(1);		/* put new possible moves */
+	if (allmoves) showmoves(1, attribs);		/* put new possible moves */
 	showscore();				/* does refresh() finally */
-	return 1;
+	return (1);
 }
 
 /* othermove() checks area for an existing possible move.  bady and badx are  *
@@ -457,8 +480,9 @@ register bady, badx;
 /* showmoves() is nearly identical to othermove(), but it highlights possible */
 /* moves instead.  "on" tells showmoves() whether to add or remove moves.     */
 
-void showmoves(on)
+void showmoves(on, attribs)
 register on;
+int * attribs;
 {
 	register dy = -1, dx;
 
@@ -481,10 +505,20 @@ register on;
 				 * or not, and then "walks" chosen valid     *
 				 * move, reprinting characters with new mode */
 
-				if (on) standout();
+				if (on)
+					standout();
 				do {
 					j += dy;
 					i += dx;
+#ifdef A_COLOR
+					if (!on && has_colors()) {
+						int newval = grid[j][i];
+						attron(attribs[newval - 1]);
+						mvaddch(j, i, newval + '0');
+						attroff(attribs[newval - 1]);
+					}
+					else
+#endif
 					mvaddch(j, i, grid[j][i] + '0');
 				} while (--d);
 				if (on) standend();
@@ -515,7 +549,6 @@ register int newscore;
 	register struct score *ptrtmp, *eof = &toplist[MAXSCORE], *new = NULL;
 	extern char *getenv(), *tgetstr();
 #ifndef MSDOS
-	extern struct passwd *getpwuid();
 	void lockit();
 #else
 	char user_name[100];
