@@ -45,7 +45,7 @@
  * defined.
  */
 
-static char *version = "Greed v3.2";
+static char *version = "Greed v" VERS;
 
 #ifdef MSDOS
 #define NOTBSD
@@ -697,10 +697,19 @@ void help() {
 	if (!helpwin) {
 	  helpwin = newwin(18, 65, 1, 7);
 #ifndef MSDOS
+#ifdef ACS_URCORNER
+	  box(helpwin, ACS_VLINE, ACS_HLINE);	/* print box around info */
+					/* put '+' at corners, looks better */
+	  (void) waddch(helpwin, ACS_ULCORNER); 
+	  mvwaddch(helpwin, 0, 64, ACS_URCORNER);
+	  mvwaddch(helpwin, 17, 0, ACS_LLCORNER); 
+	  mvwaddch(helpwin, 17, 64, ACS_LRCORNER);
+#else
 	  box(helpwin, '|', '-');	/* print box around info */
 					/* put '+' at corners, looks better */
 	  (void) waddch(helpwin, '+'); mvwaddch(helpwin, 0, 64, '+');
 	  mvwaddch(helpwin, 17, 0, '+'); mvwaddch(helpwin, 17, 64, '+');
+#endif
 #else
 	  box(helpwin, (char) 0xba, (char) 0xcd);	/* special DOS chars */
 	  mvwaddch(helpwin, 0, 0, (char) 0xc9);
@@ -710,7 +719,7 @@ void help() {
 #endif
 
 	  mvwprintw(helpwin, 1, 2,
-		"Welcome to %s, by Matthew Day (mday@iconsys.uu.net).",version);
+		"Welcome to %s, by Matthew Day <mday@iconsys.uu.net>.",version);
 #ifdef MSDOS
 	  msg(2,"           (MSDOS adaptation by Fred C. Smith)");
 #endif

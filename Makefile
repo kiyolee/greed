@@ -3,9 +3,8 @@
 # slight editing of "chmod", "cp", and "rm" statements at bottom of this file.
 
 # Note: When the version changes, you also have to change
-#  * the name of the containing directory
-#  * the RPM spec file
-V=3.2
+# the RPM spec file and the LSM.
+VERS=3.3
 
 # Choose BSD for Berkeley Unix, NOTBSD for all other Unixes, MSDOS for DOS
 SYSDEF=BSD
@@ -33,25 +32,34 @@ CC = gcc
 #TERMLIB = scurses.lib
 
 greed: greed.c
-	cc -DSCOREFILE=\"$(SFILE)\" -D$(SYSDEF) -o greed greed.c $(CFLAGS) $(TERMLIB)
+	cc -DSCOREFILE=\"$(SFILE)\" -D$(SYSDEF) -DVERS=\"$(VERS)\" -o greed greed.c $(CFLAGS) $(TERMLIB)
 
 install: greed
 	cp greed $(BIN)
 	chmod 4711 $(BIN)/greed
 
-SOURCES = READ.ME Makefile greed.c greed.lsm greed.spec
-
-greed.tar:
-	(cd ..; tar -cvf greed-$(V)/greed.tar `echo $(SOURCES) | sed "/\(^\| \)/s// greed-$(V)\//g"`)
-greed.tar.gz: greed.tar
-	gzip -f greed.tar
-
-greed.shar:
-	shar $(SOURCES) >greed.shar
 clean:
-	rm -f *.o greed greed.tar
+	rm -f *~ *.o greed greed-*.tar.gz  greed*.rpm
 
-rpm: greed.tar.gz
-	cp greed.tar.gz /usr/src/SOURCES/greed-$(V).tar.gz
-	cp greed.spec /usr/src/SPECS/greed-$(V)-1.spec
-	rpm -ba greed-$(V)-1.spec
+SOURCES = READ.ME Makefile greed.c greed.lsm greed.spec greed.6
+
+greed-$(VERS).tar.gz: $(SOURCES)
+	@ls $(SOURCES) | sed s:^:greed-$(VERS)/: >MANIFEST
+	@(cd ..; ln -s greed greed-$(VERS))
+	(cd ..; tar -czvf greed/greed-$(VERS).tar.gz `cat greed/MANIFEST`)
+	@(cd ..; rm greed-$(VERS))
+
+greed-$(VERS).shar:
+	shar $(SOURCES) >greed-$(VERS).shar
+
+dist: greed-$(VERS).tar.gz
+
+RPMROOT=/usr/src/redhat
+RPM = rpm
+RPMFLAGS = -ba
+rpm: dist
+	cp greed-$(VERS).tar.gz $(RPMROOT)/SOURCES;
+	cp greed.spec $(RPMROOT)/SPECS
+	cd $(RPMROOT)/SPECS; $(RPM) $(RPMFLAGS) greed.spec	
+	cp $(RPMROOT)/RPMS/`arch|sed 's/i[4-9]86/i386/'`/greed-$(VERS)*.rpm .
+	cp $(RPMROOT)/SRPMS/greed-$(VERS)*.src.rpm .
