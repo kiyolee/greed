@@ -2,8 +2,7 @@
 # MSDOS users need PCCurses v1.3 (or later) and Microsoft C 5.1, plus
 # slight editing of "chmod", "cp", and "rm" statements at bottom of this file.
 
-# Note: When the version changes, you also have to change
-# the RPM spec file and the LSM.
+# Note: When the version changes, you also have to change the RPM spec file.
 VERS=3.4
 
 # Choose BSD for Berkeley Unix, NOTBSD for all other Unixes, MSDOS for DOS
@@ -48,7 +47,7 @@ clean:
 	rm -f *~ *.o greed greed-*.tar.gz  greed*.rpm
 	rm -f greed.6 manpage.links manpage.refs
 
-SOURCES = READ.ME Makefile greed.c greed.lsm greed.spec greed.xml
+SOURCES = READ.ME Makefile greed.c greed.spec greed.xml
 
 greed-$(VERS).tar.gz: $(SOURCES) greed.6
 	@ls $(SOURCES) greed.6 | sed s:^:greed-$(VERS)/: >MANIFEST
