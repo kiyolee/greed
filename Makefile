@@ -2,7 +2,7 @@
 # MSDOS users need PCCurses v1.3 (or later) and Microsoft C 5.1, plus
 # slight editing of "chmod", "cp", and "rm" statements at bottom of this file.
 
-VERS=3.5
+VERS=$(shell sed <greed.spec -n -e '/Version: \(.*\)/s//\1/p')
 
 # Choose BSD for Berkeley Unix, NOTBSD for all other Unixes, MSDOS for DOS
 #SYSDEF=BSD
@@ -46,7 +46,7 @@ clean:
 	rm -f *~ *.o greed greed-*.tar.gz  greed*.rpm
 	rm -f greed.6 manpage.links manpage.refs
 
-SOURCES = READ.ME Makefile greed.c greed.spec greed.xml
+SOURCES = README COPYING Makefile greed.c greed.spec greed.xml
 
 greed-$(VERS).tar.gz: $(SOURCES) greed.6
 	@ls $(SOURCES) greed.6 | sed s:^:greed-$(VERS)/: >MANIFEST
@@ -55,9 +55,3 @@ greed-$(VERS).tar.gz: $(SOURCES) greed.6
 	@(cd ..; rm greed-$(VERS))
 
 dist: greed-$(VERS).tar.gz
-
-RPMROOT=/usr/src/redhat
-rpm: dist
-	rpmbuild --define 'myversion $(VERS)' -ta greed-$(VERS).tar.gz
-	cp $(RPMROOT)/RPMS/*/greed-$(VERS)*.rpm .
-	cp $(RPMROOT)/SRPMS/greed-$(VERS)*.src.rpm .
