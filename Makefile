@@ -35,12 +35,12 @@ install: greed
 	chmod 4711 $(BIN)/greed
 
 greed.tar:
-	tar cvf greed.tar READ.ME Makefile greed.c
+	tar cvf greed.tar READ.ME Makefile greed.c greed.lsm
 greed.tar.gz: greed.tar
 	gzip greed.tar
 
 greed.shar:
-	shar READ.ME Makefile greed.c >greed.shar
+	shar READ.ME Makefile greed.c greed.lsm >greed.shar
 clean:
 	rm -f *.o greed greed.tar
 
