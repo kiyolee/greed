@@ -7,8 +7,8 @@
 VERS=3.4
 
 # Choose BSD for Berkeley Unix, NOTBSD for all other Unixes, MSDOS for DOS
-SYSDEF=BSD
-#SYSDEF=NOTBSD
+#SYSDEF=BSD
+SYSDEF=NOTBSD
 #SYSDEF=MSDOS
 
 # Prepend "c:" (or whatever drive you use) to the following paths for MSDOS
@@ -32,7 +32,7 @@ CC = gcc
 #TERMLIB = scurses.lib
 
 greed: greed.c
-	cc -DSCOREFILE=\"$(SFILE)\" -D$(SYSDEF) -DVERS=\"$(VERS)\" -o greed greed.c $(CFLAGS) $(TERMLIB)
+	cc -DSCOREFILE=\"$(SFILE)\" -D$(SYSDEF) -DRELEASE=\"$(VERS)\" -o greed greed.c $(CFLAGS) $(TERMLIB)
 
 greed.6: greed.xml
 	xmlto man greed.xml

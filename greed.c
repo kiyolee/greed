@@ -45,7 +45,7 @@
  * defined.
  */
 
-static char *version = "Greed v" VERS;
+static char *version = "Greed v" RELEASE;
 
 #ifdef MSDOS
 #define NOTBSD
