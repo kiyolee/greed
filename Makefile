@@ -4,7 +4,7 @@
 
 # Note: When the version changes, you also have to change
 # the RPM spec file and the LSM.
-VERS=3.3
+VERS=3.4
 
 # Choose BSD for Berkeley Unix, NOTBSD for all other Unixes, MSDOS for DOS
 SYSDEF=BSD
