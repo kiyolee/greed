@@ -2,8 +2,7 @@
 # MSDOS users need PCCurses v1.3 (or later) and Microsoft C 5.1, plus
 # slight editing of "chmod", "cp", and "rm" statements at bottom of this file.
 
-# Note: When the version changes, you also have to change the RPM spec file.
-VERS=3.4
+VERS=3.5
 
 # Choose BSD for Berkeley Unix, NOTBSD for all other Unixes, MSDOS for DOS
 #SYSDEF=BSD
@@ -58,11 +57,7 @@ greed-$(VERS).tar.gz: $(SOURCES) greed.6
 dist: greed-$(VERS).tar.gz
 
 RPMROOT=/usr/src/redhat
-RPM = rpm
-RPMFLAGS = -ba
 rpm: dist
-	cp greed-$(VERS).tar.gz $(RPMROOT)/SOURCES;
-	cp greed.spec $(RPMROOT)/SPECS
-	cd $(RPMROOT)/SPECS; $(RPM) $(RPMFLAGS) greed.spec	
-	cp $(RPMROOT)/RPMS/`arch|sed 's/i[4-9]86/i386/'`/greed-$(VERS)*.rpm .
+	rpmbuild --define 'myversion $(VERS)' -ta greed-$(VERS).tar.gz
+	cp $(RPMROOT)/RPMS/*/greed-$(VERS)*.rpm .
 	cp $(RPMROOT)/SRPMS/greed-$(VERS)*.src.rpm .

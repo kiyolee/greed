@@ -85,10 +85,11 @@ defined.</para>
 
 </refsect1>
 
-<refsect1 id='authors'><title>AUTHORS</title>
-<para>Originally written by Matt Day.  Maintained by
-&lt;esr@snark.thyrsus.com&gt;. See ESR's home page at
-<ulink url='http://www.tuxedo.org/~esr/'>http://www.tuxedo.org/~esr/</ulink> for updates and other resources.</para>
+<refsect1 id='authors'><title>AUTHORS</title> <para>Originally written
+by Matt Day.  Maintained by <email>esr@snark.thyrsus.com</email>. See
+ESR's home page at <ulink
+url='http://www.catb.org/~esr/'>http://www.catb.org/~esr/</ulink> for
+updates and other resources.</para>
 </refsect1>
 
 <refsect1 id='bugs'><title>BUGS</title>
