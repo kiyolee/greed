@@ -38,8 +38,8 @@ install: greed
 	cp greed $(BIN)
 	chmod 4711 $(BIN)/greed
 
-greed.6: greed.sgml
-	docbook2man greed.sgml
+greed.6: greed.xml
+	xmlto man greed.xml
 
 install: greed.6 uninstall
 	cp greed /usr/bin
@@ -52,10 +52,10 @@ clean:
 	rm -f *~ *.o greed greed-*.tar.gz  greed*.rpm
 	rm -f greed.6 manpage.links manpage.refs
 
-SOURCES = READ.ME Makefile greed.c greed.lsm greed.spec greed.sgml greed.6
+SOURCES = READ.ME Makefile greed.c greed.lsm greed.spec greed.xml
 
-greed-$(VERS).tar.gz: $(SOURCES)
-	@ls $(SOURCES) | sed s:^:greed-$(VERS)/: >MANIFEST
+greed-$(VERS).tar.gz: $(SOURCES) greed.6
+	@ls $(SOURCES) greed.6 | sed s:^:greed-$(VERS)/: >MANIFEST
 	@(cd ..; ln -s greed greed-$(VERS))
 	(cd ..; tar -czvf greed/greed-$(VERS).tar.gz `cat greed/MANIFEST`)
 	@(cd ..; rm greed-$(VERS))
