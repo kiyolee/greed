@@ -34,19 +34,15 @@ CC = gcc
 greed: greed.c
 	cc -DSCOREFILE=\"$(SFILE)\" -D$(SYSDEF) -DVERS=\"$(VERS)\" -o greed greed.c $(CFLAGS) $(TERMLIB)
 
-install: greed
-	cp greed $(BIN)
-	chmod 4711 $(BIN)/greed
-
 greed.6: greed.xml
 	xmlto man greed.xml
 
 install: greed.6 uninstall
-	cp greed /usr/bin
+	cp greed $(BIN)
 	cp greed.6 /usr/share/man/man6/greed.6
 
 uninstall:
-	rm -f /usr/bin/install /usr/share/man/man6/greed.6
+	rm -f $(BIN)/install /usr/share/man/man6/greed.6
 
 clean:
 	rm -f *~ *.o greed greed-*.tar.gz  greed*.rpm
