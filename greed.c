@@ -383,7 +383,7 @@ int * attribs;
 		return (1);
 	case 'q': case 'Q':
 		quit();
-		return(-1);
+		return(1);
 	case '?':
 		help();
 		return (1);
