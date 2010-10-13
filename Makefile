@@ -43,7 +43,7 @@ uninstall:
 	rm -f $(BIN)/install /usr/share/man/man6/greed.6
 
 clean:
-	rm -f *~ *.o greed greed-*.tar.gz  greed*.rpm
+	rm -f *~ *.o greed greed-*.tar.gz  greed*.rpm *.html
 	rm -f greed.6 manpage.links manpage.refs
 
 SOURCES = README COPYING Makefile greed.c greed.spec greed.xml
