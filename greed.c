@@ -50,6 +50,8 @@ static char *version = "Greed v" RELEASE;
 #ifdef MSDOS
 #define NOTBSD
 #endif
+#include <stdlib.h>
+#include <string.h>
 #include <ctype.h>
 #include <curses.h>
 #include <signal.h>
@@ -204,7 +206,6 @@ char *argv[];
 	int attribs[9];
 #ifdef A_COLOR
 	char *colors;
-	extern char *getenv(), *strchr();
 #endif
 
 	cmdname = argv[0];			/* save the command name */
