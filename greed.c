@@ -50,6 +50,7 @@ static char *version = "Greed v" RELEASE;
 #include <signal.h>
 #include <pwd.h>
 #include <fcntl.h>
+#include <stdbool.h>
 #ifdef A_COLOR
 #include <ctype.h>
 #endif
@@ -79,13 +80,14 @@ struct score {
     int score;
 };
 
-int allmoves = 0, score = 1, grid[HEIGHT][WIDTH], y, x, havebotmsg = 0;
-char *cmdname;
-WINDOW *helpwin = NULL;
-void topscores();
+static int grid[HEIGHT][WIDTH], y, x;
+static bool allmoves = false, score = true, havebotmsg = false;
+static char *cmdname;
+static WINDOW *helpwin = NULL;
 
+static void topscores(int);
 
-void botmsg(char *msg, int backcur)
+void botmsg(char *msg, bool backcur)
 /* 
  * botmsg() writes "msg" at the middle of the bottom line of the screen.
  * Boolean "backcur" specifies whether to put cursor back on the grid or
@@ -94,9 +96,10 @@ void botmsg(char *msg, int backcur)
 {
     mvaddstr(23, 40, msg);
     clrtoeol();
-    if (backcur) move(y, x);
+    if (backcur) 
+	move(y, x);
     refresh();
-    havebotmsg = 1;
+    havebotmsg = true;
 }
 
 
@@ -112,7 +115,7 @@ static void quit(int sig)
     (void) signal(SIGQUIT, SIG_IGN);
 
     if (stdscr) {
-	botmsg("Really quit? ", 0);
+	botmsg("Really quit? ", false);
 	if ((ch = getch()) != 'y' && ch != 'Y') {
 	    move(y, x);
 	    (void) signal(SIGINT, osig);	/* reset old signal */
@@ -160,7 +163,7 @@ void showscore(void)
     refresh();
 }
 
-void showmoves();
+void showmoves(int, int*);
 
 main(int argc, char **argv)
 {
@@ -178,7 +181,9 @@ main(int argc, char **argv)
 	    topscores(0);
 	    exit(0);
 	}
-    } else if (argc > 2) usage();	/* can't have > 2 arguments */
+    } 
+    else if (argc > 2)		/* can't have > 2 arguments */ 
+	usage();
 
     (void) signal(SIGINT, quit);	/* catch off the signals */
     (void) signal(SIGQUIT, quit);
@@ -186,7 +191,7 @@ main(int argc, char **argv)
 
     initscr();				/* set up the terminal modes */
 #ifdef KEY_MIN
-    keypad(stdscr, TRUE);
+    keypad(stdscr, true);
 #endif /* KEY_MIN */
     cbreak();
     noecho();
@@ -230,7 +235,7 @@ main(int argc, char **argv)
 	    if (*cp == ':')
 		while (*++cp)
 		    if (*cp == 'p')
-			allmoves = TRUE;
+			allmoves = true;
 	}
     }
 #endif
@@ -256,7 +261,8 @@ main(int argc, char **argv)
     standend();
     grid[y][x] = 0;				/* eat initial square */
 
-    if (allmoves) showmoves(1, attribs);
+    if (allmoves) 
+	showmoves(1, attribs);
     showscore();
 
     /* main loop, gives tunnel() a user command */
@@ -264,7 +270,7 @@ main(int argc, char **argv)
 	continue;
 
     if (!val) {				/* if didn't quit by 'q' cmd */
-	botmsg("Hit any key..", 0);	/* then let user examine     */
+	botmsg("Hit any key..", false);	/* then let user examine     */
 	getch();			/* final screen              */
     }
 
@@ -365,7 +371,7 @@ int tunnel(chtype cmd, int *attribs)
 		showscore();		/* print final score */
 		return (0);
 	    } else {		/* otherwise prevent bad move */
-		botmsg("Bad move.", 1);
+		botmsg("Bad move.", true);
 		return (1);
 	    }
 	} while (--d);
@@ -377,7 +383,7 @@ int tunnel(chtype cmd, int *attribs)
 
     if (havebotmsg) {			/* if old bottom msg exists */
 	mvprintw(23, 40, "%s - Hit '?' for help.", version);
-	havebotmsg = 0;
+	havebotmsg = false;
     }
 
     mvaddch(y, x, ' ');			/* erase old ME */
@@ -484,7 +490,7 @@ char doputc(char c)
     return(fputc(c, stdout));
 }
 
-void topscores(int newscore)
+static void topscores(int newscore)
 /* 
  * topscores() processes it's argument with the high score file, makes any
  * updates to the file, and outputs the list to the screen.  If "newscore"
