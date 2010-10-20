@@ -583,7 +583,6 @@ void help(void)
 {
     if (!helpwin) {
 	helpwin = newwin(18, 65, 1, 7);
-#ifndef MSDOS
 #ifdef ACS_URCORNER
 	box(helpwin, ACS_VLINE, ACS_HLINE);	/* print box around info */
 	/* put '+' at corners, looks better */
@@ -597,19 +596,9 @@ void help(void)
 	(void) waddch(helpwin, '+'); mvwaddch(helpwin, 0, 64, '+');
 	mvwaddch(helpwin, 17, 0, '+'); mvwaddch(helpwin, 17, 64, '+');
 #endif
-#else
-	box(helpwin, (char) 0xba, (char) 0xcd);	/* special DOS chars */
-	mvwaddch(helpwin, 0, 0, (char) 0xc9);
-	mvwaddch(helpwin, 0, 64, (char) 0xbb);
-	mvwaddch(helpwin, 17, 0, (char) 0xc8);
-	mvwaddch(helpwin, 17, 64, (char) 0xbc);
-#endif
 
 	mvwprintw(helpwin, 1, 2,
 		  "Welcome to %s, by Matthew Day <mday@iconsys.uu.net>.",version);
-#ifdef MSDOS
-	msg(2,"           (MSDOS adaptation by Fred C. Smith)");
-#endif
 	msg(3," The object of Greed is to erase as much of the screen as");
 	msg(4," possible by moving around in a grid of numbers.  To move");
 	msg(5," your cursor, simply use the 'hjklyubn' keys or your number");
