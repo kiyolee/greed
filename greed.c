@@ -21,7 +21,6 @@
  * color, one color to each of the digit values. This will also enable
  * checking of an environment variable GREEDOPTS to override the
  * default color set, which will be parsed as a string of the form:
-
  *
  *	<c1><c2><c3><c4><c5><c6><c7><c8><c9>[:[p]]
  *
@@ -88,7 +87,7 @@ static WINDOW *helpwin = NULL;
 
 static void topscores(bool);
 
-void botmsg(char *msg, bool backcur)
+static void botmsg(char *msg, bool backcur)
 /* 
  * botmsg() writes "msg" at the middle of the bottom line of the screen.
  * Boolean "backcur" specifies whether to put cursor back on the grid or
@@ -133,8 +132,7 @@ static void quit(int sig)
     exit(0);
 }
 
-
-void out(int onsig)
+static void out(int onsig)
 /* 
  * out() is run when the signal SIGTERM is sent, it corrects the terminal
  * state (if necessary) and exits.
@@ -145,14 +143,14 @@ void out(int onsig)
 }
 
 
-void usage(void) 
+static void usage(void) 
 /* usage() prints out the proper command line usage for Greed and exits. */
 {
     fprintf(stderr, "Usage: %s [-p] [-s]\n", cmdname);
     exit(1);
 }
 
-void showscore(void) 
+static void showscore(void) 
 /* 
  * showscore() prints the score and the percentage of the screen eaten
  * at the beginning of the bottom line of the screen, moves the
