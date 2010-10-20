@@ -54,13 +54,10 @@ static char *version = "Greed v" RELEASE;
 #include <ctype.h>
 #endif
 
-#define random lrand48			/* use high quality random routines */
-#define srandom srand48
-
 #define MAXSCORE 10			/* max number of high score entries */
 #define FILESIZE (MAXSCORE * sizeof(struct score))	/* total byte size of *
 							 * high score file    */
-#define rnd(x) (int) ((random() % (x))+1)	/* rnd() returns random num *
+#define rnd(x) (int) ((lrand48() % (x))+1)	/* rnd() returns random num *
 						 * between 1 and x          */
 #define ME '@'				/* marker of current screen location */
 
@@ -74,16 +71,15 @@ struct score {				/* changing stuff in this struct */
 int allmoves = 0, score = 1, grid[22][79], y, x, havebotmsg = 0;
 char *cmdname;
 WINDOW *helpwin = NULL;
-extern long random();
 void topscores();
 
+
+void botmsg(char *msg, int backcur)
 /* 
  * botmsg() writes "msg" at the middle of the bottom line of the screen.
  * Boolean "backcur" specifies whether to put cursor back on the grid or
  * leave it on the bottom line (e.g. for questions).
  */
-
-void botmsg(char *msg, int backcur)
 {
     mvaddstr(23, 40, msg);
     clrtoeol();
@@ -92,12 +88,13 @@ void botmsg(char *msg, int backcur)
     havebotmsg = 1;
 }
 
-/* quit() is run when the user hits ^C or ^\, it queries the user if he
+
+static void quit(int sig) 
+/* 
+ * quit() is run when the user hits ^C or ^\, it queries the user if he
  * really wanted to quit, and if so, checks the high score stuff (with the
  * current score) and quits; otherwise, simply returns to the game.
  */
-
-static void quit(int sig) 
 {
     int ch;
     void (*osig)() = signal(SIGINT, SIG_IGN);	/* save old signal */
@@ -121,31 +118,31 @@ static void quit(int sig)
     exit(0);
 }
 
-/* out() is run when the signal SIGTERM is sent, it corrects the terminal
- * state (if necessary) and exits.
- */
 
 void out(int onsig)
+/* 
+ * out() is run when the signal SIGTERM is sent, it corrects the terminal
+ * state (if necessary) and exits.
+ */
 {
     if (stdscr) endwin();
     exit(0);
 }
 
-/* usage() prints out the proper command line usage for Greed and exits. */
 
 void usage(void) 
+/* usage() prints out the proper command line usage for Greed and exits. */
 {
     fprintf(stderr, "Usage: %s [-p] [-s]\n", cmdname);
     exit(1);
 }
 
+void showscore(void) 
 /* 
  * showscore() prints the score and the percentage of the screen eaten
  * at the beginning of the bottom line of the screen, moves the
  * cursor back on the grid, and refreshes the screen.
  */
-
-void showscore(void) 
 {
     mvprintw(23, 7, "%d  %.2f%%", score, (float) score / 17.38);
     move(y, x);
@@ -183,7 +180,7 @@ main(int argc, char **argv)
     cbreak();
     noecho();
 
-    srandom(time(0) ^ getpid() << 16);	/* initialize the random seed *
+    srand48(time(0) ^ getpid() << 16);	/* initialize the random seed *
 					 * with a unique number       */
 
 #ifdef A_COLOR
@@ -268,11 +265,12 @@ main(int argc, char **argv)
     exit(0);
 }
 
-/* tunnel() does the main game work.  Returns 1 if everything's okay, 0 if
- * user "died", and -1 if user specified and confirmed 'q' (fast quit).
- */
 
 int tunnel(chtype cmd, int *attribs)
+/* 
+ * tunnel() does the main game work.  Returns 1 if everything's okay, 0 if
+ * user "died", and -1 if user specified and confirmed 'q' (fast quit).
+ */
 {
     int dy, dx, distance;
     void help();
@@ -362,7 +360,9 @@ int tunnel(chtype cmd, int *attribs)
 	} while (--d);
     }
 
-    if (allmoves) showmoves(0, attribs);		/* remove possible moves */
+    /* remove possible moves */
+    if (allmoves) 
+	showmoves(0, attribs);
 
     if (havebotmsg) {			/* if old bottom msg exists */
 	mvprintw(23, 40, "%s - Hit '?' for help.", version);
@@ -370,7 +370,7 @@ int tunnel(chtype cmd, int *attribs)
     }
 
     mvaddch(y, x, ' ');			/* erase old ME */
-    do {					/* print good path */
+    do {				/* print good path */
 	y += dy;
 	x += dx;
 	score++;
@@ -380,19 +380,19 @@ int tunnel(chtype cmd, int *attribs)
     standout();
     mvaddch(y, x, ME);			/* put new ME */
     standend();
-    if (allmoves) showmoves(1, attribs);		/* put new possible moves */
-    showscore();				/* does refresh() finally */
+    if (allmoves) 
+	showmoves(1, attribs);		/* put new possible moves */
+    showscore();			/* does refresh() finally */
     return (1);
 }
 
+int othermove(int bady, int badx)
 /* 
  * othermove() checks area for an existing possible move.  bady and
  * badx are direction variables that tell othermove() they are
  * already no good, and to not process them.  I don't know if this
  * is efficient, but it works!
  */
-
-int othermove(int bady, int badx)
 {
     int dy = -1, dx;
 
@@ -418,12 +418,11 @@ int othermove(int bady, int badx)
     return 0;			/* no good moves were found */
 }
 
+void showmoves(int on, int *attribs)
 /*
  * showmoves() is nearly identical to othermove(), but it highlights possible
  * moves instead.  "on" tells showmoves() whether to add or remove moves.
  */
-
-void showmoves(int on, int *attribs)
 {
     int dy = -1, dx;
 
@@ -468,19 +467,18 @@ void showmoves(int on, int *attribs)
     }
 }
 
-/* doputc() simply prints out a character to stdout, used by tputs() */
-
 char doputc(char c)
+/* doputc() simply prints out a character to stdout, used by tputs() */
 {
     return(fputc(c, stdout));
 }
 
-/* topscores() processes it's argument with the high score file, makes any
+void topscores(int newscore)
+/* 
+ * topscores() processes it's argument with the high score file, makes any
  * updates to the file, and outputs the list to the screen.  If "newscore"
  * is 0, the score file is printed to the screen (i.e. "greed -s")
  */
-
-void topscores(int newscore)
 {
     int fd, count = 1;
     static char termbuf[BUFSIZ];
@@ -552,14 +550,15 @@ void topscores(int newscore)
     }
 }
 
-/* lockit() creates a file with mode 0 to serve as a lock file.  The creat()
+
+void lockit(int on)
+/*
+ * lockit() creates a file with mode 0 to serve as a lock file.  The creat()
  * call will fail if the file exists already, since it was made with mode 0.
  * lockit() will wait approx. 15 seconds for the lock file, and then
  * override it (shouldn't happen, but might).  "on" says whether to turn
  * locking on or not.
  */
-
-void lockit(int on)
 {
     int fd, x = 1;
 
@@ -583,11 +582,11 @@ void lockit(int on)
 
 #define msg(row, msg) mvwaddstr(helpwin, row, 2, msg);
 
-/* help() simply creates a new window over stdscr, and writes the help info
+void help(void) 
+/* 
+ * help() simply creates a new window over stdscr, and writes the help info
  * inside it.  Uses macro msg() to save space.
  */
-
-void help(void) 
 {
     if (!helpwin) {
 	helpwin = newwin(18, 65, 1, 7);
