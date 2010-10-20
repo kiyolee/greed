@@ -16,11 +16,12 @@
  */
 
 /*
- * On SVr3.2 and later UNIX versions, Greed will detect color curses(3)
- * if you have it and generate the board in color, one color to each of the
- * digit values. This will also enable checking of an environment variable
- * GREEDOPTS to override the default color set, which will be parsed as a
- * string of the form:
+ * When using a curses library with color capability, Greed will
+ * detect color curses(3) if you have it and generate the board in
+ * color, one color to each of the digit values. This will also enable
+ * checking of an environment variable GREEDOPTS to override the
+ * default color set, which will be parsed as a string of the form:
+
  *
  *	<c1><c2><c3><c4><c5><c6><c7><c8><c9>[:[p]]
  *
