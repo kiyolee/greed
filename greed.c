@@ -290,7 +290,7 @@ int tunnel(chtype cmd, int *attribs)
  */
 {
     int dy, dx, distance;
-    void help();
+    void help(void);
 
     switch (cmd) {				/* process user command */
     case 'h': case 'H': case '4':
