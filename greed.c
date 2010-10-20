@@ -1,8 +1,9 @@
 /* 
- * greed.c v4.0 - Written by Matthew T. Day (mday@iconsys.uu.net), 09/06/89
+ * greed.c - Written by Matthew T. Day (mday@iconsys.uu.net), 09/06/89
  *
- * Now maintained by Eric S. Raymond <esr@snark.thyrsus.com>.  Matt Day dropped
- * out of sight and hasn't posted a new version or patch in four years.
+ * Now maintained by Eric S. Raymond <esr@snark.thyrsus.com>.  Matt
+ * Day dropped out of sight and hasn't posted a new version or patch
+ * in many years.
  *
  * 11/15/95 Fred C. Smith (Yes, the SAME Fred C. Smith who did the MS-DOS
  *          version), fix the 'p' option so when it removes the highlight
@@ -13,8 +14,6 @@
  *          -Some style changes in the code, again personal preference.
  *          fredex@fcshome.stoneham.ma.us
  */
-
-/* vi:set ts=8: Set tab break=8 in the "vi" editor */
 
 /* Port to MSDOS (using Microsoft C v5.1 and PCCurses) provided by Fred C. *
  * Smith (..!ulowell!cg-alta!fredex), 07/29/89.                            */
@@ -101,8 +100,8 @@ static char *version = "Greed v" RELEASE;
 #endif
 
 struct score {				/* changing stuff in this struct */
-	char user[9];			/* makes old score files incompatible */
-	int score;
+    char user[9];			/* makes old score files incompatible */
+    int score;
 };
 int allmoves = 0, score = 1, grid[22][79], y, x, havebotmsg = 0;
 char *cmdname;
@@ -120,542 +119,541 @@ char scorepath [_MAX_PATH];
  * Boolean "backcur" specifies whether to put cursor back on the grid or *
  * leave it on the bottom line (e.g. for questions).                     */
 
-void botmsg(msg, backcur)
-register char *msg;
-register backcur;
+void botmsg(char *msg, int backcur)
 {
-	mvaddstr(23, 40, msg);
-	clrtoeol();
-	if (backcur) move(y, x);
-	refresh();
-	havebotmsg = 1;
+    mvaddstr(23, 40, msg);
+    clrtoeol();
+    if (backcur) move(y, x);
+    refresh();
+    havebotmsg = 1;
 }
 
 /* quit() is run when the user hits ^C or ^\, it queries the user if he     *
  * really wanted to quit, and if so, checks the high score stuff (with the  *
  * current score) and quits; otherwise, simply returns to the game.         */
 
-void quit() {
-	register ch;
+static void quit(int sig) 
+{
+    int ch;
 #ifdef NOTBSD
-	void (*osig)() = signal(SIGINT, SIG_IGN);	/* save old signal */
+    void (*osig)() = signal(SIGINT, SIG_IGN);	/* save old signal */
 #else
-	int (*osig)() = signal(SIGINT, SIG_IGN);
+    int (*osig)() = signal(SIGINT, SIG_IGN);
 #endif
 #ifndef MSDOS
-	(void) signal(SIGQUIT, SIG_IGN);
+    (void) signal(SIGQUIT, SIG_IGN);
 #else
-	(void) signal(SIGBREAK, SIG_IGN);
+    (void) signal(SIGBREAK, SIG_IGN);
 #endif
 
-	if (stdscr) {
-		botmsg("Really quit? ", 0);
-		if ((ch = getch()) != 'y' && ch != 'Y') {
-			move(y, x);
-			(void) signal(SIGINT, osig);	/* reset old signal */
+    if (stdscr) {
+	botmsg("Really quit? ", 0);
+	if ((ch = getch()) != 'y' && ch != 'Y') {
+	    move(y, x);
+	    (void) signal(SIGINT, osig);	/* reset old signal */
 #ifndef MSDOS
-			(void) signal(SIGQUIT, osig);
+	    (void) signal(SIGQUIT, osig);
 #else
-			(void) signal(SIGBREAK, osig);
+	    (void) signal(SIGBREAK, osig);
 #endif
-			refresh();
-			return;
-		}
-		move(23, 0);
-		refresh();
-		endwin();
-		puts("\n");
-		topscores(score);
+	    refresh();
+	    return;
 	}
-	exit(0);
+	move(23, 0);
+	refresh();
+	endwin();
+	puts("\n");
+	topscores(score);
+    }
+    exit(0);
 }
 
 /* out() is run when the signal SIGTERM is sent, it corrects the terminal *
  * state (if necessary) and exits.                                        */
 
-void out() {
-	if (stdscr) endwin();
-	exit(0);
+void out(int onsig)
+{
+    if (stdscr) endwin();
+    exit(0);
 }
 
 /* usage() prints out the proper command line usage for Greed and exits. */
 
-void usage() {
+void usage(void) {
 	fprintf(stderr, "Usage: %s [-p] [-s]\n", cmdname);
 	exit(1);
 }
 
-/* showscore() prints the score and the percentage of the screen eaten at the *
- * beginning of the bottom line of the screen, moves the cursor back on the   *
- * grid, and refreshes the screen.                                            */
+/* 
+ * showscore() prints the score and the percentage of the screen eaten
+ * at the beginning of the bottom line of the screen, moves the
+ * cursor back on the grid, and refreshes the screen.
+ */
 
-void showscore() {
-	mvprintw(23, 7, "%d  %.2f%%", score, (float) score / 17.38);
-	move(y, x);
-	refresh();
+void showscore(void) 
+{
+    mvprintw(23, 7, "%d  %.2f%%", score, (float) score / 17.38);
+    move(y, x);
+    refresh();
 }
 
 void showmoves();
 
-main(argc, argv)
-int argc;
-char *argv[];
+main(int argc, char **argv)
 {
-	register val = 1;
-	extern long time();
-	int attribs[9];
+    int val = 1;
+    extern long time();
+    int attribs[9];
 #ifdef A_COLOR
-	char *colors;
+    char *colors;
 #endif
 
-	cmdname = argv[0];			/* save the command name */
-	if (argc == 2) {			/* process the command line */
-		if (strlen(argv[1]) != 2 || argv[1][0] != '-') usage();
-		if (argv[1][1] == 's') {
-			topscores(0);
-			exit(0);
-		}
-	} else if (argc > 2) usage();		/* can't have > 2 arguments */
+    cmdname = argv[0];			/* save the command name */
+    if (argc == 2) {			/* process the command line */
+	if (strlen(argv[1]) != 2 || argv[1][0] != '-') usage();
+	if (argv[1][1] == 's') {
+	    topscores(0);
+	    exit(0);
+	}
+    } else if (argc > 2) usage();		/* can't have > 2 arguments */
 
-	(void) signal(SIGINT, quit);		/* catch off the signals */
+    (void) signal(SIGINT, quit);		/* catch off the signals */
 #ifndef MSDOS
-	(void) signal(SIGQUIT, quit);
+    (void) signal(SIGQUIT, quit);
 #else
-	(void) signal(SIGBREAK, quit);
+    (void) signal(SIGBREAK, quit);
 #endif
-	(void) signal(SIGTERM, out);
+    (void) signal(SIGTERM, out);
 
 #ifdef MSDOS
-{
+    {
 	char *envptr = getenv("GREEDPATH");
 
 	if (!envptr) strcpy(scorepath, SCOREFILE);
 	else {
-		strcpy(scorepath, envptr);
-		strcat(scorepath, "/");
-		strcat(scorepath, DOS_SCOREFILE);
+	    strcpy(scorepath, envptr);
+	    strcat(scorepath, "/");
+	    strcat(scorepath, DOS_SCOREFILE);
 	}
-}
+    }
 #endif
 
-	initscr();				/* set up the terminal modes */
+    initscr();				/* set up the terminal modes */
 #ifdef KEY_MIN
-	keypad(stdscr, TRUE);
+    keypad(stdscr, TRUE);
 #endif /* KEY_MIN */
-	crmode();
-	noecho();
+    crmode();
+    noecho();
 
-	srandom(time(0) ^ getpid() << 16);	/* initialize the random seed *
-						 * with a unique number       */
+    srandom(time(0) ^ getpid() << 16);	/* initialize the random seed *
+					 * with a unique number       */
 
 #ifdef A_COLOR
-	if (has_colors()) {
-		start_color();
-		init_pair(1, COLOR_YELLOW, COLOR_BLACK);
-		init_pair(2, COLOR_RED, COLOR_BLACK);
-		init_pair(3, COLOR_GREEN, COLOR_BLACK);
-		init_pair(4, COLOR_CYAN, COLOR_BLACK);	
-		init_pair(5, COLOR_MAGENTA, COLOR_BLACK);
+    if (has_colors()) {
+	start_color();
+	init_pair(1, COLOR_YELLOW, COLOR_BLACK);
+	init_pair(2, COLOR_RED, COLOR_BLACK);
+	init_pair(3, COLOR_GREEN, COLOR_BLACK);
+	init_pair(4, COLOR_CYAN, COLOR_BLACK);	
+	init_pair(5, COLOR_MAGENTA, COLOR_BLACK);
 
-		attribs[0] = COLOR_PAIR(1);
-		attribs[1] = COLOR_PAIR(2);
-		attribs[2] = COLOR_PAIR(3);
-		attribs[3] = COLOR_PAIR(4);
-		attribs[4] = COLOR_PAIR(5);
-		attribs[5] = COLOR_PAIR(1) | A_BOLD;
-		attribs[6] = COLOR_PAIR(2) | A_BOLD;
-		attribs[7] = COLOR_PAIR(3) | A_BOLD;
-		attribs[8] = COLOR_PAIR(4) | A_BOLD;
+	attribs[0] = COLOR_PAIR(1);
+	attribs[1] = COLOR_PAIR(2);
+	attribs[2] = COLOR_PAIR(3);
+	attribs[3] = COLOR_PAIR(4);
+	attribs[4] = COLOR_PAIR(5);
+	attribs[5] = COLOR_PAIR(1) | A_BOLD;
+	attribs[6] = COLOR_PAIR(2) | A_BOLD;
+	attribs[7] = COLOR_PAIR(3) | A_BOLD;
+	attribs[8] = COLOR_PAIR(4) | A_BOLD;
 
-		if ((colors = getenv("GREEDOPTS")) != (char *) NULL) {
-			static char *cnames = " bgcrmywBGCRMYW";
-			register char *cp;
+	if ((colors = getenv("GREEDOPTS")) != (char *) NULL) {
+	    static char *cnames = " bgcrmywBGCRMYW";
+	    char *cp;
 
-			for (cp = colors; *cp && *cp != ':'; cp++)
-				if (strchr(cnames, *cp) != (char *) NULL)
-					if (*cp != ' ') {
-						init_pair(cp-colors+1,
-							strchr(cnames, tolower(*cp))-cnames,
-							COLOR_BLACK);
-						attribs[cp-colors]=COLOR_PAIR(cp-colors+1);
-						if (isupper(*cp))
-							attribs[cp-colors] |= A_BOLD;
-					}
-			if (*cp == ':')
-			    while (*++cp)
-				if (*cp == 'p')
-				    allmoves = TRUE;
-		}
+	    for (cp = colors; *cp && *cp != ':'; cp++)
+		if (strchr(cnames, *cp) != (char *) NULL)
+		    if (*cp != ' ') {
+			init_pair(cp-colors+1,
+				  strchr(cnames, tolower(*cp))-cnames,
+				  COLOR_BLACK);
+			attribs[cp-colors]=COLOR_PAIR(cp-colors+1);
+			if (isupper(*cp))
+			    attribs[cp-colors] |= A_BOLD;
+		    }
+	    if (*cp == ':')
+		while (*++cp)
+		    if (*cp == 'p')
+			allmoves = TRUE;
 	}
+    }
 #endif
 
-	for (y=0; y < 22; y++)			/* fill the grid array and */
-		for (x=0; x < 79; x++)		/* print numbers out */
+    for (y=0; y < 22; y++)			/* fill the grid array and */
+	for (x=0; x < 79; x++)		/* print numbers out */
 #ifdef A_COLOR
-			if (has_colors()) {
-				register newval = rnd(9);
+	    if (has_colors()) {
+		int newval = rnd(9);
 
-				attron(attribs[newval - 1]);
-				mvaddch(y, x, (grid[y][x] = newval) + '0');
-				attroff(attribs[newval - 1]);
-			} else
+		attron(attribs[newval - 1]);
+		mvaddch(y, x, (grid[y][x] = newval) + '0');
+		attroff(attribs[newval - 1]);
+	    } else
 #endif
-			mvaddch(y, x, (grid[y][x] = rnd(9)) + '0');
+		mvaddch(y, x, (grid[y][x] = rnd(9)) + '0');
 
-	mvaddstr(23, 0, "Score: ");		/* initialize bottom line */
-	mvprintw(23, 40, "%s - Hit '?' for help.", version);
-	y = rnd(22)-1; x = rnd(79)-1;		/* random initial location */
-	standout();
-	mvaddch(y, x, ME);
-	standend();
-	grid[y][x] = 0;				/* eat initial square */
+    mvaddstr(23, 0, "Score: ");		/* initialize bottom line */
+    mvprintw(23, 40, "%s - Hit '?' for help.", version);
+    y = rnd(22)-1; x = rnd(79)-1;		/* random initial location */
+    standout();
+    mvaddch(y, x, ME);
+    standend();
+    grid[y][x] = 0;				/* eat initial square */
 
-	if (allmoves) showmoves(1, attribs);
-	showscore();
+    if (allmoves) showmoves(1, attribs);
+    showscore();
 
-	while ((val = tunnel(getch(), attribs)) > 0)	/* main loop, gives tunnel() */
-		continue;			 /* user command              */
+    while ((val = tunnel(getch(), attribs)) > 0)	/* main loop, gives tunnel() */
+	continue;			 /* user command              */
 
-	if (!val) {				/* if didn't quit by 'q' cmd */
-		botmsg("Hit any key..", 0);	/* then let user examine     */
-		getch();			/* final screen              */
-	}
+    if (!val) {				/* if didn't quit by 'q' cmd */
+	botmsg("Hit any key..", 0);	/* then let user examine     */
+	getch();			/* final screen              */
+    }
 
-	move(23, 0);
-	refresh();
-	endwin();
-	puts("\n");				/* writes two newlines */
-	topscores(score);
-	exit(0);
+    move(23, 0);
+    refresh();
+    endwin();
+    puts("\n");				/* writes two newlines */
+    topscores(score);
+    exit(0);
 }
 
 /* tunnel() does the main game work.  Returns 1 if everything's okay, 0 if *
  * user "died", and -1 if user specified and confirmed 'q' (fast quit).    */
 
-tunnel(cmd, attribs)
-register chtype cmd;
-int * attribs;
+int tunnel(chtype cmd, int *attribs)
 {
-	register dy, dx, distance;
-	void help();
+    int dy, dx, distance;
+    void help();
 
-	switch (cmd) {				/* process user command */
-	case 'h': case 'H': case '4':
+    switch (cmd) {				/* process user command */
+    case 'h': case 'H': case '4':
 #ifdef KEY_LEFT
-	case KEY_LEFT:
+    case KEY_LEFT:
 #endif /* KEY_LEFT */
-		dy = 0; dx = -1;
-		break;
-	case 'j': case 'J': case '2':
+	dy = 0; dx = -1;
+	break;
+    case 'j': case 'J': case '2':
 #ifdef KEY_DOWN
-	case KEY_DOWN:
+    case KEY_DOWN:
 #endif /* KEY_DOWN */
-		dy = 1; dx = 0;
-		break;
-	case 'k': case 'K': case '8':
+	dy = 1; dx = 0;
+	break;
+    case 'k': case 'K': case '8':
 #ifdef KEY_UP
-	case KEY_UP:
+    case KEY_UP:
 #endif /* KEY_UP */
-		dy = -1; dx = 0;
-		break;
-	case 'l': case 'L': case '6':
+	dy = -1; dx = 0;
+	break;
+    case 'l': case 'L': case '6':
 #ifdef KEY_RIGHT
-	case KEY_RIGHT:
+    case KEY_RIGHT:
 #endif /* KEY_RIGHT */
-		dy = 0; dx = 1;
-		break;
-	case 'b': case 'B': case '1':
-		dy = 1; dx = -1;
-		break;
-	case 'n': case 'N': case '3':
-		dy = dx = 1;
-		break;
-	case 'y': case 'Y': case '7':
-		dy = dx = -1;
-		break;
-	case 'u': case 'U': case '9':
-		dy = -1; dx = 1;
-		break;
-	case 'p': case 'P':
-		allmoves = !allmoves;
-		showmoves(allmoves, attribs);
-		move(y, x);
-		refresh();
-		return (1);
-	case 'q': case 'Q':
-		quit();
-		return(1);
-	case '?':
-		help();
-		return (1);
-	case '\14': case '\22':			/* ^L or ^R (redraw) */
-		wrefresh(curscr);		/* falls through to return */
-	default:
-		return (1);
-	}
-	distance = (y+dy >= 0 && x+dx >= 0 && y+dy < 22 && x+dx < 79) ?
-		grid[y+dy][x+dx] : 0;
-
-	{
-		register j = y, i = x, d = distance;
-
-		do {				/* process move for validity */
-			j += dy;
-			i += dx;
-			if (j >= 0 && i >= 0 && j < 22 && i < 79 && grid[j][i])
-				continue;	/* if off the screen */
-			else if (!othermove(dy, dx)) {	/* no other good move */
-				j -= dy;
-				i -= dx;
-				mvaddch(y, x, ' ');
-				while (y != j || x != i) {
-					y += dy;	/* so we manually */
-					x += dx;	/* print chosen path */
-					score++;
-					mvaddch(y, x, ' ');
-				}
-				mvaddch(y, x, '*');	/* with a '*' */
-				showscore();		/* print final score */
-				return (0);
-			} else {		/* otherwise prevent bad move */
-				botmsg("Bad move.", 1);
-				return (1);
-			}
-		} while (--d);
-	}
-
-	if (allmoves) showmoves(0, attribs);		/* remove possible moves */
-
-	if (havebotmsg) {			/* if old bottom msg exists */
-		mvprintw(23, 40, "%s - Hit '?' for help.", version);
-		havebotmsg = 0;
-	}
-
-	mvaddch(y, x, ' ');			/* erase old ME */
-	do {					/* print good path */
-		y += dy;
-		x += dx;
-		score++;
-		grid[y][x] = 0;
-		mvaddch(y, x, ' ');
-	} while (--distance);
-	standout();
-	mvaddch(y, x, ME);			/* put new ME */
-	standend();
-	if (allmoves) showmoves(1, attribs);		/* put new possible moves */
-	showscore();				/* does refresh() finally */
+	dy = 0; dx = 1;
+	break;
+    case 'b': case 'B': case '1':
+	dy = 1; dx = -1;
+	break;
+    case 'n': case 'N': case '3':
+	dy = dx = 1;
+	break;
+    case 'y': case 'Y': case '7':
+	dy = dx = -1;
+	break;
+    case 'u': case 'U': case '9':
+	dy = -1; dx = 1;
+	break;
+    case 'p': case 'P':
+	allmoves = !allmoves;
+	showmoves(allmoves, attribs);
+	move(y, x);
+	refresh();
 	return (1);
-}
+    case 'q': case 'Q':
+	quit(0);
+	return(1);
+    case '?':
+	help();
+	return (1);
+    case '\14': case '\22':			/* ^L or ^R (redraw) */
+	wrefresh(curscr);		/* falls through to return */
+    default:
+	return (1);
+    }
+    distance = (y+dy >= 0 && x+dx >= 0 && y+dy < 22 && x+dx < 79) ?
+	grid[y+dy][x+dx] : 0;
 
-/* othermove() checks area for an existing possible move.  bady and badx are  *
- * direction variables that tell othermove() they are already no good, and to *
- * not process them.  I don't know if this is efficient, but it works!        */
+    {
+	int j = y, i = x, d = distance;
 
-othermove(bady, badx)
-register bady, badx;
-{
-	register dy = -1, dx;
-
-	for (; dy <= 1; dy++)
-		for (dx = -1; dx <= 1; dx++)
-			if ((!dy && !dx) || (dy == bady && dx == badx) ||
-			    y+dy < 0 && x+dx < 0 && y+dy >= 22 && x+dx >= 79)
-					/* don't do 0,0 or bad coordinates */
-				continue;
-			else {
-				register j=y, i=x, d=grid[y+dy][x+dx];
-
-				if (!d) continue;
-				do {		/* "walk" the path, checking */
-					j += dy;
-					i += dx;
-					if (j < 0 || i < 0 || j >= 22 ||
-					    i >= 79 || !grid[j][i]) break;
-				} while (--d);
-				if (!d) return 1;	/* if "d" got to 0, *
-							 * move was okay.   */
-			}
-	return 0;			/* no good moves were found */
-}
-
-/* showmoves() is nearly identical to othermove(), but it highlights possible */
-/* moves instead.  "on" tells showmoves() whether to add or remove moves.     */
-
-void showmoves(on, attribs)
-register on;
-int * attribs;
-{
-	register dy = -1, dx;
-
-	for (; dy <= 1; dy++) {
-		if (y+dy < 0 || y+dy >= 22) continue;
-		for (dx = -1; dx <= 1; dx++) {
-			register j=y, i=x, d=grid[y+dy][x+dx];
-
-			if (!d) continue;
-			do {
-				j += dy;
-				i += dx;
-				if (j < 0 || i < 0 || j >= 22
-				    || i >= 79 || !grid[j][i]) break;
-			} while (--d);
-			if (!d) {
-				register j=y, i=x, d=grid[y+dy][x+dx];
-
-				/* The next section chooses inverse-video    *
-				 * or not, and then "walks" chosen valid     *
-				 * move, reprinting characters with new mode */
-
-				if (on)
-					standout();
-				do {
-					j += dy;
-					i += dx;
-#ifdef A_COLOR
-					if (!on && has_colors()) {
-						int newval = grid[j][i];
-						attron(attribs[newval - 1]);
-						mvaddch(j, i, newval + '0');
-						attroff(attribs[newval - 1]);
-					}
-					else
-#endif
-					mvaddch(j, i, grid[j][i] + '0');
-				} while (--d);
-				if (on) standend();
-			}
+	do {				/* process move for validity */
+	    j += dy;
+	    i += dx;
+	    if (j >= 0 && i >= 0 && j < 22 && i < 79 && grid[j][i])
+		continue;	/* if off the screen */
+	    else if (!othermove(dy, dx)) {	/* no other good move */
+		j -= dy;
+		i -= dx;
+		mvaddch(y, x, ' ');
+		while (y != j || x != i) {
+		    y += dy;	/* so we manually */
+		    x += dx;	/* print chosen path */
+		    score++;
+		    mvaddch(y, x, ' ');
 		}
+		mvaddch(y, x, '*');	/* with a '*' */
+		showscore();		/* print final score */
+		return (0);
+	    } else {		/* otherwise prevent bad move */
+		botmsg("Bad move.", 1);
+		return (1);
+	    }
+	} while (--d);
+    }
+
+    if (allmoves) showmoves(0, attribs);		/* remove possible moves */
+
+    if (havebotmsg) {			/* if old bottom msg exists */
+	mvprintw(23, 40, "%s - Hit '?' for help.", version);
+	havebotmsg = 0;
+    }
+
+    mvaddch(y, x, ' ');			/* erase old ME */
+    do {					/* print good path */
+	y += dy;
+	x += dx;
+	score++;
+	grid[y][x] = 0;
+	mvaddch(y, x, ' ');
+    } while (--distance);
+    standout();
+    mvaddch(y, x, ME);			/* put new ME */
+    standend();
+    if (allmoves) showmoves(1, attribs);		/* put new possible moves */
+    showscore();				/* does refresh() finally */
+    return (1);
+}
+
+/* 
+ * othermove() checks area for an existing possible move.  bady and
+ * badx are direction variables that tell othermove() they are
+ * already no good, and to not process them.  I don't know if this
+ * is efficient, but it works!
+ */
+
+int othermove(int bady, int badx)
+{
+    int dy = -1, dx;
+
+    for (; dy <= 1; dy++)
+	for (dx = -1; dx <= 1; dx++)
+	    if ((!dy && !dx) || (dy == bady && dx == badx) ||
+		y+dy < 0 && x+dx < 0 && y+dy >= 22 && x+dx >= 79)
+		/* don't do 0,0 or bad coordinates */
+		continue;
+	    else {
+		int j=y, i=x, d=grid[y+dy][x+dx];
+
+		if (!d) continue;
+		do {		/* "walk" the path, checking */
+		    j += dy;
+		    i += dx;
+		    if (j < 0 || i < 0 || j >= 22 ||
+			i >= 79 || !grid[j][i]) break;
+		} while (--d);
+		if (!d) return 1;	/* if "d" got to 0, *
+					 * move was okay.   */
+	    }
+    return 0;			/* no good moves were found */
+}
+
+/*
+ * showmoves() is nearly identical to othermove(), but it highlights possible
+ * moves instead.  "on" tells showmoves() whether to add or remove moves.
+ */
+
+void showmoves(int on, int *attribs)
+{
+    int dy = -1, dx;
+
+    for (; dy <= 1; dy++) {
+	if (y+dy < 0 || y+dy >= 22) continue;
+	for (dx = -1; dx <= 1; dx++) {
+	    int j=y, i=x, d=grid[y+dy][x+dx];
+
+	    if (!d) continue;
+	    do {
+		j += dy;
+		i += dx;
+		if (j < 0 || i < 0 || j >= 22
+		    || i >= 79 || !grid[j][i]) break;
+	    } while (--d);
+	    if (!d) {
+		int j=y, i=x, d=grid[y+dy][x+dx];
+
+		/* The next section chooses inverse-video    *
+		 * or not, and then "walks" chosen valid     *
+		 * move, reprinting characters with new mode */
+
+		if (on)
+		    standout();
+		do {
+		    j += dy;
+		    i += dx;
+#ifdef A_COLOR
+		    if (!on && has_colors()) {
+			int newval = grid[j][i];
+			attron(attribs[newval - 1]);
+			mvaddch(j, i, newval + '0');
+			attroff(attribs[newval - 1]);
+		    }
+		    else
+#endif
+			mvaddch(j, i, grid[j][i] + '0');
+		} while (--d);
+		if (on) standend();
+	    }
 	}
+    }
 }
 
 /* doputc() simply prints out a character to stdout, used by tputs() */
 
-char doputc(c)
-register char c;
+char doputc(char c)
 {
-	return(fputc(c, stdout));
+    return(fputc(c, stdout));
 }
 
 /* topscores() processes it's argument with the high score file, makes any *
  * updates to the file, and outputs the list to the screen.  If "newscore" *
  * is 0, the score file is printed to the screen (i.e. "greed -s")         */
 
-void topscores(newscore)
-register int newscore;
+void topscores(int newscore)
 {
-	register fd, count = 1;
-	static char termbuf[BUFSIZ];
-	char *tptr = (char *) malloc(16), *boldon, *boldoff;
-	struct score *toplist = (struct score *) malloc(FILESIZE);
-	register struct score *ptrtmp, *eof = &toplist[MAXSCORE], *new = NULL;
-	extern char *getenv(), *tgetstr();
+    int fd, count = 1;
+    static char termbuf[BUFSIZ];
+    char *tptr = (char *) malloc(16), *boldon, *boldoff;
+    struct score *toplist = (struct score *) malloc(FILESIZE);
+    struct score *ptrtmp, *eof = &toplist[MAXSCORE], *new = NULL;
+    extern char *getenv(), *tgetstr();
 #ifndef MSDOS
-	void lockit();
+    void lockit();
 #else
-	char user_name[100];
+    char user_name[100];
 #endif
 
-	(void) signal(SIGINT, SIG_IGN);		/* Catch all signals, so high */
+    (void) signal(SIGINT, SIG_IGN);		/* Catch all signals, so high */
 #ifndef MSDOS
-	(void) signal(SIGQUIT, SIG_IGN);	/* score file doesn't get     */
+    (void) signal(SIGQUIT, SIG_IGN);	/* score file doesn't get     */
 #else
-	(void) signal(SIGBREAK, SIG_IGN);	/* score file doesn't get     */
+    (void) signal(SIGBREAK, SIG_IGN);	/* score file doesn't get     */
 #endif
-	(void) signal(SIGTERM, SIG_IGN);	/* messed up with a kill.     */
-	(void) signal(SIGHUP, SIG_IGN);
+    (void) signal(SIGTERM, SIG_IGN);	/* messed up with a kill.     */
+    (void) signal(SIGHUP, SIG_IGN);
 
-		/* following open() creates the file if it doesn't exist */
-		/* already, using secure mode */
+    /* following open() creates the file if it doesn't exist */
+    /* already, using secure mode */
 #ifndef MSDOS
-	if ((fd = open(SCOREFILE, O_RDWR|O_CREAT, 0600)) == -1) {
+    if ((fd = open(SCOREFILE, O_RDWR|O_CREAT, 0600)) == -1) {
 #else
 	if ((fd = open(scorepath, O_RDWR|O_CREAT, S_IREAD|S_IWRITE)) == -1) {
 #endif
-		fprintf(stderr, "%s: %s: Cannot open.\n", cmdname,
+	    fprintf(stderr, "%s: %s: Cannot open.\n", cmdname,
 #ifndef MSDOS
-			SCOREFILE);
+		    SCOREFILE);
 #else
-			scorepath);
+	    scorepath);
 #endif
-		exit(1);
+	exit(1);
+    }
+
+#ifndef MSDOS
+    lockit(1);			/* lock score file */
+#endif
+    for (ptrtmp=toplist; ptrtmp < eof; ptrtmp++) ptrtmp->score = 0;
+    /* initialize scores to 0 */
+#ifndef MSDOS
+    read(fd, toplist, FILESIZE);	/* read whole score file in at once */
+#else
+    read(fd, (char *) toplist, FILESIZE);
+#endif
+
+    if (newscore) {			/* if possible high score */
+	for (ptrtmp=toplist; ptrtmp < eof; ptrtmp++)
+	    /* find new location for score */
+	    if (newscore > ptrtmp->score) break;
+	if (ptrtmp < eof) {	/* if it's a new high score */
+	    new = ptrtmp;	/* put "new" at new location */
+	    ptrtmp = eof-1;	/* start at end of list */
+	    while (ptrtmp > new) {	/* shift list one down */
+		*ptrtmp = *(ptrtmp-1);
+		ptrtmp--;
+	    }
+
+	    new->score = newscore;	/* fill "new" with the info */
+#ifndef MSDOS
+	    strncpy(new->user, getpwuid(getuid())->pw_name, 8);
+	    (void) lseek(fd, 0, 0);	/* seek back to top of file */
+	    write(fd, toplist, FILESIZE);	/* write it all out */
+#else
+	    printf("Enter your name: ");
+	    gets(user_name);
+	    strncpy(new->user, user_name, 8);
+	    new->user[8] = '\0';
+	    (void) lseek(fd, 0L, 0);
+	    write(fd, (char *) toplist, FILESIZE);
+#endif
 	}
+    }
 
+    close(fd);
 #ifndef MSDOS
-	lockit(1);			/* lock score file */
-#endif
-	for (ptrtmp=toplist; ptrtmp < eof; ptrtmp++) ptrtmp->score = 0;
-					/* initialize scores to 0 */
-#ifndef MSDOS
-	read(fd, toplist, FILESIZE);	/* read whole score file in at once */
-#else
-	read(fd, (char *) toplist, FILESIZE);
+    lockit(0);			/* unlock score file */
 #endif
 
-	if (newscore) {			/* if possible high score */
-		for (ptrtmp=toplist; ptrtmp < eof; ptrtmp++)
-					/* find new location for score */
-			if (newscore > ptrtmp->score) break;
-		if (ptrtmp < eof) {	/* if it's a new high score */
-			new = ptrtmp;	/* put "new" at new location */
-			ptrtmp = eof-1;	/* start at end of list */
-			while (ptrtmp > new) {	/* shift list one down */
-				*ptrtmp = *(ptrtmp-1);
-				ptrtmp--;
-			}
-
-			new->score = newscore;	/* fill "new" with the info */
-#ifndef MSDOS
-			strncpy(new->user, getpwuid(getuid())->pw_name, 8);
-			(void) lseek(fd, 0, 0);	/* seek back to top of file */
-			write(fd, toplist, FILESIZE);	/* write it all out */
-#else
-			printf("Enter your name: ");
-			gets(user_name);
-			strncpy(new->user, user_name, 8);
-			new->user[8] = '\0';
-			(void) lseek(fd, 0L, 0);
-			write(fd, (char *) toplist, FILESIZE);
-#endif
-		}
-	}
-
-	close(fd);
-#ifndef MSDOS
-	lockit(0);			/* unlock score file */
-#endif
-
-	if (toplist->score) puts("Rank  Score  Name     Percentage");
-	else puts("No high scores.");	/* perhaps "greed -s" was run before *
+    if (toplist->score) puts("Rank  Score  Name     Percentage");
+    else puts("No high scores.");	/* perhaps "greed -s" was run before *
 					 * any greed had been played? */
 #ifndef MSDOS
-	if (new && tgetent(termbuf, getenv("TERM")) > 0) {
-		boldon = tgetstr("so", &tptr);		/* grab off inverse */
-		boldoff = tgetstr("se", &tptr);		/* video codes */
-		if (!boldon || !boldoff) boldon = boldoff = 0;
-						/* if only got one of the *
-						 * codes, use neither     */
-	}
+    if (new && tgetent(termbuf, getenv("TERM")) > 0) {
+	boldon = tgetstr("so", &tptr);		/* grab off inverse */
+	boldoff = tgetstr("se", &tptr);		/* video codes */
+	if (!boldon || !boldoff) boldon = boldoff = 0;
+	/* if only got one of the *
+	 * codes, use neither     */
+    }
 #else
-	boldon = "[1m";
-	boldon = "[m";
+    boldon = "[1m";
+    boldon = "[m";
 #endif
 
-	/* print out list to screen, highlighting new score, if any */
-	for (ptrtmp=toplist; ptrtmp < eof && ptrtmp->score; ptrtmp++, count++) {
-		if (ptrtmp == new && boldon)
+    /* print out list to screen, highlighting new score, if any */
+    for (ptrtmp=toplist; ptrtmp < eof && ptrtmp->score; ptrtmp++, count++) {
+	if (ptrtmp == new && boldon)
 #ifndef MSDOS
-			tputs(boldon, 1, doputc);
-		printf("%-5d %-6d %-8s %.2f%%\n", count, ptrtmp->score,
-			ptrtmp->user, (float) ptrtmp->score / 17.38);
-		if (ptrtmp == new && boldoff) tputs(boldoff, 1, doputc);
+	    tputs(boldon, 1, doputc);
+	printf("%-5d %-6d %-8s %.2f%%\n", count, ptrtmp->score,
+	       ptrtmp->user, (float) ptrtmp->score / 17.38);
+	if (ptrtmp == new && boldoff) tputs(boldoff, 1, doputc);
 #else
-			printf("%c%s", ESC, boldon);
-		printf("%-5d %-6d %-8s %.2f%%", count, ptrtmp->score,
-			ptrtmp->user, (float) ptrtmp->score / 17.38);
-		if (ptrtmp == new && boldoff) printf("%c%s", ESC, boldoff);
-		putchar('\n');
+	printf("%c%s", ESC, boldon);
+	printf("%-5d %-6d %-8s %.2f%%", count, ptrtmp->score,
+	       ptrtmp->user, (float) ptrtmp->score / 17.38);
+	if (ptrtmp == new && boldoff) printf("%c%s", ESC, boldoff);
+	putchar('\n');
 #endif
-	}
+    }
 }
 
 /* lockit() creates a file with mode 0 to serve as a lock file.  The creat() *
@@ -665,88 +663,91 @@ register int newscore;
  * locking on or not.                                                        */
 
 #ifndef MSDOS
-void lockit(on)
-register on;
+void lockit(int on)
 {
-	register fd, x = 1;
+    int fd, x = 1;
 
-	if (on) {
-		while ((fd = creat(LOCKPATH, 0)) == -1) {
-			printf("Waiting for scorefile access... %d/15\n", x);
-			if (x++ >= 15) {
-				puts("Overriding stale lock...");
-				if (unlink(LOCKPATH) == -1) {
-					fprintf(stderr,
-						"%s: %s: Can't unlink lock.\n",
-						cmdname, LOCKPATH);
-					exit(1);
-				}
-			}
-			sleep(1);
+    if (on) {
+	while ((fd = creat(LOCKPATH, 0)) == -1) {
+	    printf("Waiting for scorefile access... %d/15\n", x);
+	    if (x++ >= 15) {
+		puts("Overriding stale lock...");
+		if (unlink(LOCKPATH) == -1) {
+		    fprintf(stderr,
+			    "%s: %s: Can't unlink lock.\n",
+			    cmdname, LOCKPATH);
+		    exit(1);
 		}
-		close(fd);
-	} else unlink(LOCKPATH);
+	    }
+	    sleep(1);
+	}
+	close(fd);
+    } else unlink(LOCKPATH);
 }
 #endif
 
 #define msg(row, msg) mvwaddstr(helpwin, row, 2, msg);
 
-/* help() simply creates a new window over stdscr, and writes the help info *
- * inside it.  Uses macro msg() to save space.                              */
+/* help() simply creates a new window over stdscr, and writes the help info
+ * inside it.  Uses macro msg() to save space.
+ */
 
-void help() {
-	if (!helpwin) {
-	  helpwin = newwin(18, 65, 1, 7);
+void help(void) 
+{
+    if (!helpwin) {
+	helpwin = newwin(18, 65, 1, 7);
 #ifndef MSDOS
 #ifdef ACS_URCORNER
-	  box(helpwin, ACS_VLINE, ACS_HLINE);	/* print box around info */
-					/* put '+' at corners, looks better */
-	  (void) waddch(helpwin, ACS_ULCORNER); 
-	  mvwaddch(helpwin, 0, 64, ACS_URCORNER);
-	  mvwaddch(helpwin, 17, 0, ACS_LLCORNER); 
-	  mvwaddch(helpwin, 17, 64, ACS_LRCORNER);
+	box(helpwin, ACS_VLINE, ACS_HLINE);	/* print box around info */
+	/* put '+' at corners, looks better */
+	(void) waddch(helpwin, ACS_ULCORNER); 
+	mvwaddch(helpwin, 0, 64, ACS_URCORNER);
+	mvwaddch(helpwin, 17, 0, ACS_LLCORNER); 
+	mvwaddch(helpwin, 17, 64, ACS_LRCORNER);
 #else
-	  box(helpwin, '|', '-');	/* print box around info */
-					/* put '+' at corners, looks better */
-	  (void) waddch(helpwin, '+'); mvwaddch(helpwin, 0, 64, '+');
-	  mvwaddch(helpwin, 17, 0, '+'); mvwaddch(helpwin, 17, 64, '+');
+	box(helpwin, '|', '-');	/* print box around info */
+	/* put '+' at corners, looks better */
+	(void) waddch(helpwin, '+'); mvwaddch(helpwin, 0, 64, '+');
+	mvwaddch(helpwin, 17, 0, '+'); mvwaddch(helpwin, 17, 64, '+');
 #endif
 #else
-	  box(helpwin, (char) 0xba, (char) 0xcd);	/* special DOS chars */
-	  mvwaddch(helpwin, 0, 0, (char) 0xc9);
-	  mvwaddch(helpwin, 0, 64, (char) 0xbb);
-	  mvwaddch(helpwin, 17, 0, (char) 0xc8);
-	  mvwaddch(helpwin, 17, 64, (char) 0xbc);
+	box(helpwin, (char) 0xba, (char) 0xcd);	/* special DOS chars */
+	mvwaddch(helpwin, 0, 0, (char) 0xc9);
+	mvwaddch(helpwin, 0, 64, (char) 0xbb);
+	mvwaddch(helpwin, 17, 0, (char) 0xc8);
+	mvwaddch(helpwin, 17, 64, (char) 0xbc);
 #endif
 
-	  mvwprintw(helpwin, 1, 2,
-		"Welcome to %s, by Matthew Day <mday@iconsys.uu.net>.",version);
+	mvwprintw(helpwin, 1, 2,
+		  "Welcome to %s, by Matthew Day <mday@iconsys.uu.net>.",version);
 #ifdef MSDOS
-	  msg(2,"           (MSDOS adaptation by Fred C. Smith)");
+	msg(2,"           (MSDOS adaptation by Fred C. Smith)");
 #endif
-	  msg(3," The object of Greed is to erase as much of the screen as");
-	  msg(4," possible by moving around in a grid of numbers.  To move");
-	  msg(5," your cursor, simply use the 'hjklyubn' keys or your number");
-	  mvwprintw(helpwin, 6, 2,
-		" keypad.  Your location is signified by the '%c' symbol.", ME);
-	  msg(7," When you move in a direction, you erase N number of grid");
-	  msg(8," squares in that direction, N being the first number in that");
-	  msg(9," direction.  Your score reflects the total number of squares");
-	  msg(10," eaten.  Greed will not let you make a move that would have");
-	  msg(11," placed you off the grid or over a previously eaten square");
-	  msg(12," unless no valid moves exist, in which case your game ends.");
-	  msg(13," Other Greed commands are 'Ctrl-L' to redraw the screen,");
-	  msg(14," 'p' to toggle the highlighting of the possible moves, and");
-	  msg(15," 'q' to quit.  Command line options to Greed are '-s' to");
-	  msg(16," output the high score file.");
+	msg(3," The object of Greed is to erase as much of the screen as");
+	msg(4," possible by moving around in a grid of numbers.  To move");
+	msg(5," your cursor, simply use the 'hjklyubn' keys or your number");
+	mvwprintw(helpwin, 6, 2,
+		  " keypad.  Your location is signified by the '%c' symbol.", ME);
+	msg(7," When you move in a direction, you erase N number of grid");
+	msg(8," squares in that direction, N being the first number in that");
+	msg(9," direction.  Your score reflects the total number of squares");
+	msg(10," eaten.  Greed will not let you make a move that would have");
+	msg(11," placed you off the grid or over a previously eaten square");
+	msg(12," unless no valid moves exist, in which case your game ends.");
+	msg(13," Other Greed commands are 'Ctrl-L' to redraw the screen,");
+	msg(14," 'p' to toggle the highlighting of the possible moves, and");
+	msg(15," 'q' to quit.  Command line options to Greed are '-s' to");
+	msg(16," output the high score file.");
 
-	  (void) wmove(helpwin, 17, 64);
-	  wrefresh(helpwin);
-	} else {
-	  touchwin(helpwin);
-	  wrefresh(helpwin);
-	}
-	(void) wgetch(helpwin);
-	touchwin(stdscr);
-	refresh();
+	(void) wmove(helpwin, 17, 64);
+	wrefresh(helpwin);
+    } else {
+	touchwin(helpwin);
+	wrefresh(helpwin);
+    }
+    (void) wgetch(helpwin);
+    touchwin(stdscr);
+    refresh();
 }
+
+/* the end */
