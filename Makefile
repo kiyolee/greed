@@ -4,30 +4,17 @@
 
 VERS=$(shell sed <greed.spec -n -e '/Version: \(.*\)/s//\1/p')
 
-# Choose BSD for Berkeley Unix, NOTBSD for all other Unixes, MSDOS for DOS
+# Choose BSD for Berkeley Unix, NOTBSD for all other Unixes
 #SYSDEF=BSD
 SYSDEF=NOTBSD
-#SYSDEF=MSDOS
 
-# Prepend "c:" (or whatever drive you use) to the following paths for MSDOS
-# Location of high score file
 SFILE=/usr/games/lib/greed.hs
 # Location of game executable
 BIN=/usr/games
 
-# Flags for use with the Linux ncurses package (recommended)
-CFLAGS = -O -s -DNOTBSD
-TERMLIB = -lncurses
+CFLAGS = -O -s
+TERMLIB = -lcurses
 CC = gcc
-
-# Flags for use with stock curses
-# CFLAGS = -O -s
-# TERMLIB = -lcurses
-# CC = gcc
-
-# Flags for use with MS-DOS
-#CFLAGS=-Oilt -Gs
-#TERMLIB = scurses.lib
 
 greed: greed.c
 	cc -DSCOREFILE=\"$(SFILE)\" -D$(SYSDEF) -DRELEASE=\"$(VERS)\" -o greed greed.c $(CFLAGS) $(TERMLIB)
