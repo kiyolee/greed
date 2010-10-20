@@ -491,9 +491,9 @@ char doputc(char c)
 
 static void topscores(bool newscore)
 /* 
- * topscores() processes it's argument with the high score file, makes any
+ * topscores() processes its argument with the high score file, makes any
  * updates to the file, and outputs the list to the screen.  If "newscore"
- * is 0, the score file is printed to the screen (i.e. "greed -s")
+ * is false, the score file is printed to the screen (i.e. "greed -s")
  */
 {
     int fd, count = 1;
@@ -545,15 +545,18 @@ static void topscores(bool newscore)
     close(fd);
     lockit(false);			/* unlock score file */
 
-    if (toplist->score) puts("Rank  Score  Name     Percentage");
-    else puts("No high scores.");	/* perhaps "greed -s" was run before *
+    if (toplist->score) 
+	puts("Rank  Score  Name     Percentage");
+    else 
+	puts("No high scores.");	/* perhaps "greed -s" was run before *
 					 * any greed had been played? */
     if (new && tgetent(termbuf, getenv("TERM")) > 0) {
-	boldon = tgetstr("so", &tptr);		/* grab off inverse */
-	boldoff = tgetstr("se", &tptr);		/* video codes */
-	if (!boldon || !boldoff) boldon = boldoff = 0;
-	/* if only got one of the *
-	 * codes, use neither     */
+	/* grab escape sequences for standout */
+	boldon = tgetstr("so", &tptr);
+	boldoff = tgetstr("se", &tptr);
+	/* if only got one of the codes, use neither */
+	if (boldon==NULL || boldoff==NULL) 
+	    boldon = boldoff = NULL;
     }
 
     /* print out list to screen, highlighting new score, if any */
