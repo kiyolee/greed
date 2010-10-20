@@ -1,5 +1,5 @@
 Name: greed
-Version: 3.6
+Version: 3.7
 Release: 1
 URL: http://www.catb.org/~esr/greed/
 Source: %{name}-%{version}.tar.gz
@@ -35,6 +35,9 @@ cp greed.6 "$RPM_BUILD_ROOT"%{_mandir}/man6/
 %{_bindir}/greed
 
 %changelog
+* Wed Oct 20 2010 Eric S. Raymond <esr@snark.thyrsus.com> 3.7-1
+- Clean up C for modern POSIX and C99-conformant environments.
+
 * Mon Dec 29 2003 Eric S. Raymond <esr@snark.thyrsus.com> 3.6-1
 - Source RPMS no longer depend on --define myversion.
 
