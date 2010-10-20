@@ -15,9 +15,6 @@
  *          fredex@fcshome.stoneham.ma.us
  */
 
-/* Port to MSDOS (using Microsoft C v5.1 and PCCurses) provided by Fred C. *
- * Smith (..!ulowell!cg-alta!fredex), 07/29/89.                            */
-
 /*
  * On SVr3.2 and later UNIX versions, Greed will detect color curses(3)
  * if you have it and generate the board in color, one color to each of the
@@ -46,44 +43,23 @@
 
 static char *version = "Greed v" RELEASE;
 
-#ifdef MSDOS
-#define NOTBSD
-#endif
 #include <stdlib.h>
 #include <string.h>
 #include <ctype.h>
 #include <curses.h>
 #include <signal.h>
-#ifndef MSDOS
 #include <pwd.h>
-#endif
-#ifdef NOTBSD
 #include <fcntl.h>
-#else
-#include <sys/file.h>
-#endif
 #ifdef A_COLOR
 #include <ctype.h>
-#endif
-#ifdef MSDOS
-#include <sys/types.h>
-
-#include <io.h>
-#include <stdlib.h>
 #endif
 
 #ifdef NOTBSD
 #ifndef crmode
 #define crmode cbreak
 #endif
-#ifndef MSDOS
 #define random lrand48			/* use high quality random routines */
 #define srandom srand48
-#else
-#define random rand
-#define srandom srand
-#define ESC 27
-#endif
 #endif
 
 #define MAXSCORE 10			/* max number of high score entries */
@@ -93,31 +69,24 @@ static char *version = "Greed v" RELEASE;
 						 * between 1 and x          */
 #define ME '@'				/* marker of current screen location */
 
-#ifdef MSDOS
-#define DOS_SCOREFILE "greed.hs"
-#else
 #define LOCKPATH "/tmp/Greed.lock"	/* lock path for high score file */
-#endif
 
 struct score {				/* changing stuff in this struct */
     char user[9];			/* makes old score files incompatible */
     int score;
 };
+
 int allmoves = 0, score = 1, grid[22][79], y, x, havebotmsg = 0;
 char *cmdname;
 WINDOW *helpwin = NULL;
-#ifndef MSDOS
 extern long random();
-#endif
 void topscores();
 
-#ifdef MSDOS
-char scorepath [_MAX_PATH];
-#endif
-
-/* botmsg() writes "msg" at the middle of the bottom line of the screen. *
- * Boolean "backcur" specifies whether to put cursor back on the grid or *
- * leave it on the bottom line (e.g. for questions).                     */
+/* 
+ * botmsg() writes "msg" at the middle of the bottom line of the screen.
+ * Boolean "backcur" specifies whether to put cursor back on the grid or
+ * leave it on the bottom line (e.g. for questions).
+ */
 
 void botmsg(char *msg, int backcur)
 {
@@ -140,22 +109,14 @@ static void quit(int sig)
 #else
     int (*osig)() = signal(SIGINT, SIG_IGN);
 #endif
-#ifndef MSDOS
     (void) signal(SIGQUIT, SIG_IGN);
-#else
-    (void) signal(SIGBREAK, SIG_IGN);
-#endif
 
     if (stdscr) {
 	botmsg("Really quit? ", 0);
 	if ((ch = getch()) != 'y' && ch != 'Y') {
 	    move(y, x);
 	    (void) signal(SIGINT, osig);	/* reset old signal */
-#ifndef MSDOS
 	    (void) signal(SIGQUIT, osig);
-#else
-	    (void) signal(SIGBREAK, osig);
-#endif
 	    refresh();
 	    return;
 	}
@@ -218,25 +179,8 @@ main(int argc, char **argv)
     } else if (argc > 2) usage();		/* can't have > 2 arguments */
 
     (void) signal(SIGINT, quit);		/* catch off the signals */
-#ifndef MSDOS
     (void) signal(SIGQUIT, quit);
-#else
-    (void) signal(SIGBREAK, quit);
-#endif
     (void) signal(SIGTERM, out);
-
-#ifdef MSDOS
-    {
-	char *envptr = getenv("GREEDPATH");
-
-	if (!envptr) strcpy(scorepath, SCOREFILE);
-	else {
-	    strcpy(scorepath, envptr);
-	    strcat(scorepath, "/");
-	    strcat(scorepath, DOS_SCOREFILE);
-	}
-    }
-#endif
 
     initscr();				/* set up the terminal modes */
 #ifdef KEY_MIN
@@ -547,47 +491,25 @@ void topscores(int newscore)
     struct score *toplist = (struct score *) malloc(FILESIZE);
     struct score *ptrtmp, *eof = &toplist[MAXSCORE], *new = NULL;
     extern char *getenv(), *tgetstr();
-#ifndef MSDOS
     void lockit();
-#else
-    char user_name[100];
-#endif
 
     (void) signal(SIGINT, SIG_IGN);		/* Catch all signals, so high */
-#ifndef MSDOS
     (void) signal(SIGQUIT, SIG_IGN);	/* score file doesn't get     */
-#else
-    (void) signal(SIGBREAK, SIG_IGN);	/* score file doesn't get     */
-#endif
     (void) signal(SIGTERM, SIG_IGN);	/* messed up with a kill.     */
     (void) signal(SIGHUP, SIG_IGN);
 
     /* following open() creates the file if it doesn't exist */
     /* already, using secure mode */
-#ifndef MSDOS
     if ((fd = open(SCOREFILE, O_RDWR|O_CREAT, 0600)) == -1) {
-#else
-	if ((fd = open(scorepath, O_RDWR|O_CREAT, S_IREAD|S_IWRITE)) == -1) {
-#endif
 	    fprintf(stderr, "%s: %s: Cannot open.\n", cmdname,
-#ifndef MSDOS
 		    SCOREFILE);
-#else
-	    scorepath);
-#endif
 	exit(1);
     }
 
-#ifndef MSDOS
     lockit(1);			/* lock score file */
-#endif
     for (ptrtmp=toplist; ptrtmp < eof; ptrtmp++) ptrtmp->score = 0;
     /* initialize scores to 0 */
-#ifndef MSDOS
     read(fd, toplist, FILESIZE);	/* read whole score file in at once */
-#else
-    read(fd, (char *) toplist, FILESIZE);
-#endif
 
     if (newscore) {			/* if possible high score */
 	for (ptrtmp=toplist; ptrtmp < eof; ptrtmp++)
@@ -602,30 +524,18 @@ void topscores(int newscore)
 	    }
 
 	    new->score = newscore;	/* fill "new" with the info */
-#ifndef MSDOS
 	    strncpy(new->user, getpwuid(getuid())->pw_name, 8);
 	    (void) lseek(fd, 0, 0);	/* seek back to top of file */
 	    write(fd, toplist, FILESIZE);	/* write it all out */
-#else
-	    printf("Enter your name: ");
-	    gets(user_name);
-	    strncpy(new->user, user_name, 8);
-	    new->user[8] = '\0';
-	    (void) lseek(fd, 0L, 0);
-	    write(fd, (char *) toplist, FILESIZE);
-#endif
 	}
     }
 
     close(fd);
-#ifndef MSDOS
     lockit(0);			/* unlock score file */
-#endif
 
     if (toplist->score) puts("Rank  Score  Name     Percentage");
     else puts("No high scores.");	/* perhaps "greed -s" was run before *
 					 * any greed had been played? */
-#ifndef MSDOS
     if (new && tgetent(termbuf, getenv("TERM")) > 0) {
 	boldon = tgetstr("so", &tptr);		/* grab off inverse */
 	boldoff = tgetstr("se", &tptr);		/* video codes */
@@ -633,26 +543,14 @@ void topscores(int newscore)
 	/* if only got one of the *
 	 * codes, use neither     */
     }
-#else
-    boldon = "[1m";
-    boldon = "[m";
-#endif
 
     /* print out list to screen, highlighting new score, if any */
     for (ptrtmp=toplist; ptrtmp < eof && ptrtmp->score; ptrtmp++, count++) {
 	if (ptrtmp == new && boldon)
-#ifndef MSDOS
 	    tputs(boldon, 1, doputc);
 	printf("%-5d %-6d %-8s %.2f%%\n", count, ptrtmp->score,
 	       ptrtmp->user, (float) ptrtmp->score / 17.38);
 	if (ptrtmp == new && boldoff) tputs(boldoff, 1, doputc);
-#else
-	printf("%c%s", ESC, boldon);
-	printf("%-5d %-6d %-8s %.2f%%", count, ptrtmp->score,
-	       ptrtmp->user, (float) ptrtmp->score / 17.38);
-	if (ptrtmp == new && boldoff) printf("%c%s", ESC, boldoff);
-	putchar('\n');
-#endif
     }
 }
 
@@ -662,7 +560,6 @@ void topscores(int newscore)
  * override it (shouldn't happen, but might).  "on" says whether to turn     *
  * locking on or not.                                                        */
 
-#ifndef MSDOS
 void lockit(int on)
 {
     int fd, x = 1;
@@ -684,7 +581,6 @@ void lockit(int on)
 	close(fd);
     } else unlink(LOCKPATH);
 }
-#endif
 
 #define msg(row, msg) mvwaddstr(helpwin, row, 2, msg);
 
