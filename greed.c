@@ -503,7 +503,7 @@ static void topscores(bool newscore)
     struct score *toplist = (struct score *) malloc(SCOREFILESIZE);
     struct score *ptrtmp, *eof = &toplist[MAXSCORES], *new = NULL;
     extern char *getenv(), *tgetstr();
-    void lockit();
+    void lockit(bool);
 
     (void) signal(SIGINT, SIG_IGN);	/* Catch all signals, so high */
     (void) signal(SIGQUIT, SIG_IGN);	/* score file doesn't get     */
@@ -519,7 +519,7 @@ static void topscores(bool newscore)
 	exit(1);
     }
 
-    lockit(1);			/* lock score file */
+    lockit(true);			/* lock score file */
     for (ptrtmp=toplist; ptrtmp < eof; ptrtmp++) ptrtmp->score = 0;
     /* initialize scores to 0 */
     read(fd, toplist, SCOREFILESIZE);	/* read whole score file in at once */
@@ -544,7 +544,7 @@ static void topscores(bool newscore)
     }
 
     close(fd);
-    lockit(0);			/* unlock score file */
+    lockit(false);			/* unlock score file */
 
     if (toplist->score) puts("Rank  Score  Name     Percentage");
     else puts("No high scores.");	/* perhaps "greed -s" was run before *
@@ -568,7 +568,7 @@ static void topscores(bool newscore)
 }
 
 
-void lockit(int on)
+void lockit(bool on)
 /*
  * lockit() creates a file with mode 0 to serve as a lock file.  The creat()
  * call will fail if the file exists already, since it was made with mode 0.
