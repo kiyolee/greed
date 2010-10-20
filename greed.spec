@@ -3,7 +3,7 @@ Version: 3.6
 Release: 1
 URL: http://www.catb.org/~esr/greed/
 Source: %{name}-%{version}.tar.gz
-License: BSD-like
+License: BSD
 Group: Games
 Summary: the strategy game of Greed
 BuildRoot: %{_tmppath}/%{name}-root
