@@ -4,20 +4,12 @@
 
 VERS=$(shell sed <greed.spec -n -e '/Version: \(.*\)/s//\1/p')
 
-# Choose BSD for Berkeley Unix, NOTBSD for all other Unixes
-#SYSDEF=BSD
-SYSDEF=NOTBSD
-
 SFILE=/usr/games/lib/greed.hs
 # Location of game executable
 BIN=/usr/games
 
-CFLAGS = -O -s
-TERMLIB = -lcurses
-CC = gcc
-
 greed: greed.c
-	cc -DSCOREFILE=\"$(SFILE)\" -D$(SYSDEF) -DRELEASE=\"$(VERS)\" -o greed greed.c $(CFLAGS) $(TERMLIB)
+	$(CC) -DSCOREFILE=\"$(SFILE)\" -DRELEASE=\"$(VERS)\" -o greed greed.c -O3 -lcurses
 
 greed.6: greed.xml
 	xmlto man greed.xml

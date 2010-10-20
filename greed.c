@@ -54,13 +54,8 @@ static char *version = "Greed v" RELEASE;
 #include <ctype.h>
 #endif
 
-#ifdef NOTBSD
-#ifndef crmode
-#define crmode cbreak
-#endif
 #define random lrand48			/* use high quality random routines */
 #define srandom srand48
-#endif
 
 #define MAXSCORE 10			/* max number of high score entries */
 #define FILESIZE (MAXSCORE * sizeof(struct score))	/* total byte size of *
@@ -104,11 +99,7 @@ void botmsg(char *msg, int backcur)
 static void quit(int sig) 
 {
     int ch;
-#ifdef NOTBSD
     void (*osig)() = signal(SIGINT, SIG_IGN);	/* save old signal */
-#else
-    int (*osig)() = signal(SIGINT, SIG_IGN);
-#endif
     (void) signal(SIGQUIT, SIG_IGN);
 
     if (stdscr) {
@@ -186,7 +177,7 @@ main(int argc, char **argv)
 #ifdef KEY_MIN
     keypad(stdscr, TRUE);
 #endif /* KEY_MIN */
-    crmode();
+    cbreak();
     noecho();
 
     srandom(time(0) ^ getpid() << 16);	/* initialize the random seed *
