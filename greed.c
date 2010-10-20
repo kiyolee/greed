@@ -85,7 +85,7 @@ static bool allmoves = false, score = true, havebotmsg = false;
 static char *cmdname;
 static WINDOW *helpwin = NULL;
 
-static void topscores(int);
+static void topscores(bool);
 
 void botmsg(char *msg, bool backcur)
 /* 
@@ -163,7 +163,7 @@ void showscore(void)
     refresh();
 }
 
-void showmoves(int, int*);
+void showmoves(bool, int*);
 
 main(int argc, char **argv)
 {
@@ -178,7 +178,7 @@ main(int argc, char **argv)
     if (argc == 2) {			/* process the command line */
 	if (strlen(argv[1]) != 2 || argv[1][0] != '-') usage();
 	if (argv[1][1] == 's') {
-	    topscores(0);
+	    topscores(false);
 	    exit(0);
 	}
     } 
@@ -262,7 +262,7 @@ main(int argc, char **argv)
     grid[y][x] = 0;				/* eat initial square */
 
     if (allmoves) 
-	showmoves(1, attribs);
+	showmoves(true, attribs);
     showscore();
 
     /* main loop, gives tunnel() a user command */
@@ -379,7 +379,7 @@ int tunnel(chtype cmd, int *attribs)
 
     /* remove possible moves */
     if (allmoves) 
-	showmoves(0, attribs);
+	showmoves(false, attribs);
 
     if (havebotmsg) {			/* if old bottom msg exists */
 	mvprintw(23, 40, "%s - Hit '?' for help.", version);
@@ -398,7 +398,7 @@ int tunnel(chtype cmd, int *attribs)
     mvaddch(y, x, ME);			/* put new ME */
     standend();
     if (allmoves) 
-	showmoves(1, attribs);		/* put new possible moves */
+	showmoves(true, attribs);		/* put new possible moves */
     showscore();			/* does refresh() finally */
     return (1);
 }
@@ -435,7 +435,7 @@ int othermove(int bady, int badx)
     return 0;			/* no good moves were found */
 }
 
-void showmoves(int on, int *attribs)
+void showmoves(bool on, int *attribs)
 /*
  * showmoves() is nearly identical to othermove(), but it highlights possible
  * moves instead.  "on" tells showmoves() whether to add or remove moves.
@@ -490,7 +490,7 @@ char doputc(char c)
     return(fputc(c, stdout));
 }
 
-static void topscores(int newscore)
+static void topscores(bool newscore)
 /* 
  * topscores() processes it's argument with the high score file, makes any
  * updates to the file, and outputs the list to the screen.  If "newscore"
