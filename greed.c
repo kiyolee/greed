@@ -92,9 +92,10 @@ void botmsg(char *msg, int backcur)
     havebotmsg = 1;
 }
 
-/* quit() is run when the user hits ^C or ^\, it queries the user if he     *
- * really wanted to quit, and if so, checks the high score stuff (with the  *
- * current score) and quits; otherwise, simply returns to the game.         */
+/* quit() is run when the user hits ^C or ^\, it queries the user if he
+ * really wanted to quit, and if so, checks the high score stuff (with the
+ * current score) and quits; otherwise, simply returns to the game.
+ */
 
 static void quit(int sig) 
 {
@@ -120,8 +121,9 @@ static void quit(int sig)
     exit(0);
 }
 
-/* out() is run when the signal SIGTERM is sent, it corrects the terminal *
- * state (if necessary) and exits.                                        */
+/* out() is run when the signal SIGTERM is sent, it corrects the terminal
+ * state (if necessary) and exits.
+ */
 
 void out(int onsig)
 {
@@ -131,9 +133,10 @@ void out(int onsig)
 
 /* usage() prints out the proper command line usage for Greed and exits. */
 
-void usage(void) {
-	fprintf(stderr, "Usage: %s [-p] [-s]\n", cmdname);
-	exit(1);
+void usage(void) 
+{
+    fprintf(stderr, "Usage: %s [-p] [-s]\n", cmdname);
+    exit(1);
 }
 
 /* 
@@ -167,9 +170,9 @@ main(int argc, char **argv)
 	    topscores(0);
 	    exit(0);
 	}
-    } else if (argc > 2) usage();		/* can't have > 2 arguments */
+    } else if (argc > 2) usage();	/* can't have > 2 arguments */
 
-    (void) signal(SIGINT, quit);		/* catch off the signals */
+    (void) signal(SIGINT, quit);	/* catch off the signals */
     (void) signal(SIGQUIT, quit);
     (void) signal(SIGTERM, out);
 
@@ -224,7 +227,7 @@ main(int argc, char **argv)
     }
 #endif
 
-    for (y=0; y < 22; y++)			/* fill the grid array and */
+    for (y=0; y < 22; y++)		/* fill the grid array and */
 	for (x=0; x < 79; x++)		/* print numbers out */
 #ifdef A_COLOR
 	    if (has_colors()) {
@@ -248,8 +251,9 @@ main(int argc, char **argv)
     if (allmoves) showmoves(1, attribs);
     showscore();
 
-    while ((val = tunnel(getch(), attribs)) > 0)	/* main loop, gives tunnel() */
-	continue;			 /* user command              */
+    /* main loop, gives tunnel() a user command */
+    while ((val = tunnel(getch(), attribs)) > 0)
+	continue;
 
     if (!val) {				/* if didn't quit by 'q' cmd */
 	botmsg("Hit any key..", 0);	/* then let user examine     */
@@ -264,8 +268,9 @@ main(int argc, char **argv)
     exit(0);
 }
 
-/* tunnel() does the main game work.  Returns 1 if everything's okay, 0 if *
- * user "died", and -1 if user specified and confirmed 'q' (fast quit).    */
+/* tunnel() does the main game work.  Returns 1 if everything's okay, 0 if
+ * user "died", and -1 if user specified and confirmed 'q' (fast quit).
+ */
 
 int tunnel(chtype cmd, int *attribs)
 {
@@ -470,9 +475,10 @@ char doputc(char c)
     return(fputc(c, stdout));
 }
 
-/* topscores() processes it's argument with the high score file, makes any *
- * updates to the file, and outputs the list to the screen.  If "newscore" *
- * is 0, the score file is printed to the screen (i.e. "greed -s")         */
+/* topscores() processes it's argument with the high score file, makes any
+ * updates to the file, and outputs the list to the screen.  If "newscore"
+ * is 0, the score file is printed to the screen (i.e. "greed -s")
+ */
 
 void topscores(int newscore)
 {
@@ -484,13 +490,14 @@ void topscores(int newscore)
     extern char *getenv(), *tgetstr();
     void lockit();
 
-    (void) signal(SIGINT, SIG_IGN);		/* Catch all signals, so high */
+    (void) signal(SIGINT, SIG_IGN);	/* Catch all signals, so high */
     (void) signal(SIGQUIT, SIG_IGN);	/* score file doesn't get     */
     (void) signal(SIGTERM, SIG_IGN);	/* messed up with a kill.     */
     (void) signal(SIGHUP, SIG_IGN);
 
-    /* following open() creates the file if it doesn't exist */
-    /* already, using secure mode */
+    /* following open() creates the file if it doesn't exist
+     * already, using secure mode
+     */
     if ((fd = open(SCOREFILE, O_RDWR|O_CREAT, 0600)) == -1) {
 	    fprintf(stderr, "%s: %s: Cannot open.\n", cmdname,
 		    SCOREFILE);
@@ -545,11 +552,12 @@ void topscores(int newscore)
     }
 }
 
-/* lockit() creates a file with mode 0 to serve as a lock file.  The creat() *
- * call will fail if the file exists already, since it was made with mode 0. *
- * lockit() will wait approx. 15 seconds for the lock file, and then         *
- * override it (shouldn't happen, but might).  "on" says whether to turn     *
- * locking on or not.                                                        */
+/* lockit() creates a file with mode 0 to serve as a lock file.  The creat()
+ * call will fail if the file exists already, since it was made with mode 0.
+ * lockit() will wait approx. 15 seconds for the lock file, and then
+ * override it (shouldn't happen, but might).  "on" says whether to turn
+ * locking on or not.
+ */
 
 void lockit(int on)
 {
