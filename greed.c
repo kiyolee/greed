@@ -56,18 +56,26 @@ static char *version = "Greed v" RELEASE;
 
 #define HEIGHT	22
 #define WIDTH	79
+#define ME	'@'
 
-#define MAXSCORE 10			/* max number of high score entries */
-#define FILESIZE (MAXSCORE * sizeof(struct score))	/* total byte size of *
-							 * high score file    */
-#define rnd(x) (int) ((lrand48() % (x))+1)	/* rnd() returns random num *
-						 * between 1 and x          */
-#define ME '@'				/* marker of current screen location */
+/*
+ * The scorefile is fixed-length binary and consists of
+ * structure images - very un-Unixy design!
+ */
+#define MAXSCORES 10
+#define SCOREFILESIZE (MAXSCORES * sizeof(struct score))
+
+/* rnd() returns a random number between 1 and x */
+#define rnd(x) (int) ((lrand48() % (x))+1)
 
 #define LOCKPATH "/tmp/Greed.lock"	/* lock path for high score file */
 
-struct score {				/* changing stuff in this struct */
-    char user[9];			/* makes old score files incompatible */
+/* 
+ * changing stuff in this struct
+ * makes old score files incompatible
+ */
+struct score {
+    char user[9];
     int score;
 };
 
@@ -486,8 +494,8 @@ void topscores(int newscore)
     int fd, count = 1;
     static char termbuf[BUFSIZ];
     char *tptr = (char *) malloc(16), *boldon, *boldoff;
-    struct score *toplist = (struct score *) malloc(FILESIZE);
-    struct score *ptrtmp, *eof = &toplist[MAXSCORE], *new = NULL;
+    struct score *toplist = (struct score *) malloc(SCOREFILESIZE);
+    struct score *ptrtmp, *eof = &toplist[MAXSCORES], *new = NULL;
     extern char *getenv(), *tgetstr();
     void lockit();
 
@@ -508,7 +516,7 @@ void topscores(int newscore)
     lockit(1);			/* lock score file */
     for (ptrtmp=toplist; ptrtmp < eof; ptrtmp++) ptrtmp->score = 0;
     /* initialize scores to 0 */
-    read(fd, toplist, FILESIZE);	/* read whole score file in at once */
+    read(fd, toplist, SCOREFILESIZE);	/* read whole score file in at once */
 
     if (newscore) {			/* if possible high score */
 	for (ptrtmp=toplist; ptrtmp < eof; ptrtmp++)
@@ -525,7 +533,7 @@ void topscores(int newscore)
 	    new->score = newscore;	/* fill "new" with the info */
 	    strncpy(new->user, getpwuid(getuid())->pw_name, 8);
 	    (void) lseek(fd, 0, 0);	/* seek back to top of file */
-	    write(fd, toplist, FILESIZE);	/* write it all out */
+	    write(fd, toplist, SCOREFILESIZE);	/* write it all out */
 	}
     }
 
