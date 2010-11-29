@@ -7,6 +7,7 @@ License: BSD
 Group: Games
 Summary: the strategy game of Greed
 BuildRoot: %{_tmppath}/%{name}-root
+XBS-Destinations: freshmeat
 
 %description
 The strategy game of Greed.  Try to eat as much as possible of the board
