@@ -612,7 +612,6 @@ void help(void)
 	helpwin = newwin(18, 65, 1, 7);
 #ifdef ACS_URCORNER
 	box(helpwin, ACS_VLINE, ACS_HLINE);	/* print box around info */
-	/* put '+' at corners, looks better */
 	(void) waddch(helpwin, ACS_ULCORNER); 
 	mvwaddch(helpwin, 0, 64, ACS_URCORNER);
 	mvwaddch(helpwin, 17, 0, ACS_LLCORNER); 
