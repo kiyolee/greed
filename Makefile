@@ -28,7 +28,7 @@ clean:
 	rm -f *~ *.o greed greed-*.tar.gz  greed*.rpm *.html
 	rm -f greed.6 manpage.links manpage.refs SHIPPER.*
 
-SOURCES = README NEWS COPYING Makefile greed.c greed.xml
+SOURCES = README NEWS COPYING Makefile greed.c greed.xml control
 
 greed-$(VERS).tar.gz: $(SOURCES) greed.6
 	@ls $(SOURCES) greed.6 | sed s:^:greed-$(VERS)/: >MANIFEST
