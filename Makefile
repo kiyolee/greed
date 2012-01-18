@@ -1,6 +1,4 @@
 # Makefile for Greed
-# MSDOS users need PCCurses v1.3 (or later) and Microsoft C 5.1, plus
-# slight editing of "chmod", "cp", and "rm" statements at bottom of this file.
 
 VERS=3.8
 
