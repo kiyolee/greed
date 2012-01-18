@@ -81,11 +81,12 @@ struct score {
 };
 
 static int grid[HEIGHT][WIDTH], y, x;
-static bool allmoves = false, score = true, havebotmsg = false;
+static bool allmoves = false, havebotmsg = false;
+static int score = 0;
 static char *cmdname;
 static WINDOW *helpwin = NULL;
 
-static void topscores(bool);
+static void topscores(int);
 
 static void botmsg(char *msg, bool backcur)
 /* 
@@ -177,7 +178,7 @@ main(int argc, char **argv)
     if (argc == 2) {			/* process the command line */
 	if (strlen(argv[1]) != 2 || argv[1][0] != '-') usage();
 	if (argv[1][1] == 's') {
-	    topscores(false);
+	    topscores(0);
 	    exit(0);
 	}
     } 
@@ -489,7 +490,7 @@ char doputc(char c)
     return(fputc(c, stdout));
 }
 
-static void topscores(bool newscore)
+static void topscores(int newscore)
 /* 
  * topscores() processes its argument with the high score file, makes any
  * updates to the file, and outputs the list to the screen.  If "newscore"
