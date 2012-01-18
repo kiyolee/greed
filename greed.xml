@@ -26,7 +26,7 @@
 <refsect1 id='description'><title>DESCRIPTION</title>
 <para>The object of Greed is to erase as much of the screen as possible by
 moving around in a grid of numbers.  To move your cursor, simply use 
-your arrow keys or the the 'hjklyubn' keys or your numberic 
+your arrow keys or the the 'hjklyubn' keys or your numeric keypad.
 Your location is signified by the @ symbol.</para>
 
 <para>When you move in a direction, you erase N number of grid squares in
@@ -40,16 +40,13 @@ game ends.</para>
 <para>Other Greed commands are 'Ctrl-L' to redraw the screen, 'p' to toggle
 the highlighting of the possible moves, and 'q' to quit.  </para>
 
-<para>The only ommand line option to Greed is '-s' to output the high
+<para>The only command line option to Greed is '-s' to output the high
 score file.</para>
 </refsect1>
 
 <refsect1 id='environment'><title>ENVIRONMENT</title>
-<para>Greed will detect color curses(3) support at compilation time.  If
-you have it, Greed will generate the board in color, one color to each
-of the digit values. This will also enable checking of an environment
-variable GREEDOPTS to override the default color set, which will be
-parsed as a string of the form:</para>
+<para>The environment variable GREEDOPTS can override the default
+color set, which will be parsed as a string of the form:</para>
 
 <literallayout remap='.nf'>
 	&lt;c1&gt;&lt;c2&gt;&lt;c3&gt;&lt;c4&gt;&lt;c5&gt;&lt;c6&gt;&lt;c7&gt;&lt;c8&gt;&lt;c9&gt;[:[p]]
