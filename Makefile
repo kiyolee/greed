@@ -7,7 +7,7 @@ SFILE=/usr/games/lib/greed.hs
 BIN=/usr/games
 
 greed: greed.c
-	$(CC) -DSCOREFILE=\"$(SFILE)\" -DRELEASE=\"$(VERS)\" -o greed greed.c -O3 -lcurses
+	$(CC) $(CPPFLAGS) $(CFLAGS) $(LDFLAGS) -DSCOREFILE=\"$(SFILE)\" -DRELEASE=\"$(VERS)\" -o greed greed.c -O3 -lcurses
 
 greed.6: greed.xml
 	xmlto man greed.xml
