@@ -1,10 +1,15 @@
-Wed Jan 18 2010 Eric S. Raymond <esr@snark.thyrsus.com> 3.8
+			greed project news
+
+3.9 @ 2013-10-23:
+  Minor improvements to in-game help and score management.
+
+3.8 @ 2012-01-18:
   Fix for gcc4's real booleans from Kiyo Kelvin.
 
-Wed Oct 20 2010 Eric S. Raymond <esr@snark.thyrsus.com> 3.7
+3.7 @ 3010-10-20:
   Clean up C for modern POSIX and C99-conformant environments.
   License changed to BSD.
 
-Mon Dec 29 2003 Eric S. Raymond <esr@snark.thyrsus.com> 3.6
+3.6 @ 2003-12-29:
   Source RPMS no longer depend on --define myversion.
 
