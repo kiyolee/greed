@@ -583,7 +583,7 @@ void lockit(bool on)
     int fd, x = 1;
 
     if (on) {
-	while ((fd = creat(LOCKPATH, 0)) == -1) {
+	while ((fd = open(LOCKPATH, O_RDWR | O_CREAT | O_EXCL, 0)) < 0) {
 	    printf("Waiting for scorefile access... %d/15\n", x);
 	    if (x++ >= 15) {
 		puts("Overriding stale lock...");
