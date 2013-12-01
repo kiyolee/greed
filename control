@@ -13,7 +13,7 @@ XBS-Destinations: freecode
 
 Homepage: http://www.catb.org/~esr/greed
 
-XBS-HTML-Template: index.html
+XBS-HTML-Target: index.html
 
 XBS-Freecode-Tags: Games/Entertainment
 
