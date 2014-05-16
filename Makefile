@@ -1,6 +1,6 @@
 # Makefile for Greed
 
-VERS=3.9
+VERS=3.10
 
 SFILE=/usr/games/lib/greed.hs
 # Location of game executable
@@ -24,7 +24,7 @@ uninstall:
 
 clean:
 	rm -f *~ *.o greed greed-*.tar.gz  greed*.rpm *.html
-	rm -f greed.6 manpage.links manpage.refs SHIPPER.*
+	rm -f greed.6 manpage.links manpage.refs
 
 SOURCES = README NEWS COPYING Makefile greed.c greed.xml control
 
@@ -37,5 +37,4 @@ greed-$(VERS).tar.gz: $(SOURCES) greed.6
 dist: greed-$(VERS).tar.gz
 
 release: greed-$(VERS).tar.gz greed.html
-	shipper -u -m -t; make clean
- 
+	shipper version=$(VERS) | sh -e -x

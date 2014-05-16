@@ -219,7 +219,7 @@ main(int argc, char **argv)
 	attribs[8] = COLOR_PAIR(4) | A_BOLD;
 
 	if ((colors = getenv("GREEDOPTS")) != (char *) NULL) {
-	    static char *cnames = " bgcrmywBGCRMYW";
+	    static char *cnames = " rgybmcwRGYBMCW";
 	    char *cp;
 
 	    for (cp = colors; *cp && *cp != ':'; cp++)

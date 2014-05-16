@@ -1,5 +1,8 @@
 			greed project news
 
+3.10 @ 2014-05-14:
+  Fix a GREEDOPTS bug reported by Yu-Jie Lin <livibetter@gmail.com>
+
 3.9 @ 2013-10-23:
   Minor improvements to in-game help and score management.
 
