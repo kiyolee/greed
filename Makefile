@@ -26,6 +26,10 @@ clean:
 	rm -f *~ *.o greed greed-*.tar.gz  greed*.rpm *.html
 	rm -f greed.6 manpage.links manpage.refs
 
+CPPCHECKOPTS =
+cppcheck:
+	cppcheck $(CPPCHECKOPTS) greed.c
+
 SOURCES = README NEWS COPYING Makefile greed.c greed.xml control
 
 greed-$(VERS).tar.gz: $(SOURCES) greed.6
@@ -38,3 +42,6 @@ dist: greed-$(VERS).tar.gz
 
 release: greed-$(VERS).tar.gz greed.html
 	shipper version=$(VERS) | sh -e -x
+
+refresh: greed.html
+	shipper -N -w version=$(VERS) | sh -e -x

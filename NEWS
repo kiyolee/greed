@@ -1,5 +1,8 @@
 			greed project news
 
+Repository head:
+  Code passes validation with cppcheck.
+
 3.10 @ 2014-05-14:
   Fix a GREEDOPTS bug reported by Yu-Jie Lin <livibetter@gmail.com>
 
