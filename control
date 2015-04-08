@@ -17,10 +17,6 @@ XBS-HTML-Target: index.html
 
 XBS-Repository-URL: http://thyrsus.com/gitweb/?p=greed.git
 
-XBS-Developer-Clone: git@thyrsus.com:greed
-
-XBS-Anonymous-Clone: git://thyrsus.com/repositories/greed.git
-
 #XBS-Project-Tags: Games/Entertainment
 
 XBS-VC-Tag-Template: %(version)s
