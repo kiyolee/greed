@@ -1,6 +1,6 @@
 # Makefile for Greed
 
-VERS=3.11
+VERS=4.1
 
 SFILE=/usr/games/lib/greed.hs
 # Location of game executable

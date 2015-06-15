@@ -9,6 +9,10 @@ You can surf to the latest version from
 The 3.1 version features better interrupt handling and the `p' suffix to
 GREEDOPTS.
 
+The 4.x versions change the scorefile format to allow longer usernames and
+include a timestamp.  If the shared scorefile isn't writable, scores are
+written and read from ~/greedscores.
+
 -------------------------------------------------------------------------------
 Welcome to Greed v3.0a!
 To install Greed, simply edit the Makefile to configure your system type, and

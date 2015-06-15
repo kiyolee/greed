@@ -81,6 +81,12 @@ defined.</para>
 <para>Default location of Greed high scores.</para>
 </listitem>
 </varlistentry>
+<varlistentry>
+<term>~/.greedscores</term>
+<listitem>
+<para>Where they're put if the default location cannot be written to..</para>
+</listitem>
+</varlistentry>
 </variablelist>
 
 </refsect1>

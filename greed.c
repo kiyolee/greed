@@ -51,6 +51,7 @@ static char *version = "Greed v" RELEASE;
 #include <pwd.h>
 #include <fcntl.h>
 #include <stdbool.h>
+#include <time.h>
 #ifdef A_COLOR
 #include <ctype.h>
 #endif
@@ -71,12 +72,17 @@ static char *version = "Greed v" RELEASE;
 
 #define LOCKPATH "/tmp/Greed.lock"	/* lock path for high score file */
 
+#define LOCALSCOREFILE	".greedscores"
+
+#define USERNAMELEN	32	/* length of leading segment that we keep */
+
 /* 
  * changing stuff in this struct
  * makes old score files incompatible
  */
 struct score {
-    char user[9];
+    char user[USERNAMELEN + 1];
+    time_t time;
     int score;
 };
 
@@ -158,7 +164,9 @@ static void showscore(void)
  * cursor back on the grid, and refreshes the screen.
  */
 {
-    mvprintw(23, 7, "%d  %.2f%%", score, (float) score / 17.38);
+    mvprintw(23, 7, "%d  %.2f%%",
+	     score,
+	     (float)(score * 100) / (HEIGHT * WIDTH));
     move(y, x);
     refresh();
 }
@@ -503,6 +511,7 @@ static void topscores(int newscore)
     struct score *toplist = (struct score *) malloc(SCOREFILESIZE);
     struct score *ptrtmp, *eof = &toplist[MAXSCORES], *new = NULL;
     extern char *getenv(), *tgetstr();
+    struct passwd *whoami;
     void lockit(bool);
 
     (void) signal(SIGINT, SIG_IGN);	/* Catch all signals, so high */
@@ -510,13 +519,17 @@ static void topscores(int newscore)
     (void) signal(SIGTERM, SIG_IGN);	/* messed up with a kill.     */
     (void) signal(SIGHUP, SIG_IGN);
 
+    whoami = getpwuid(getuid());
+    
     /* following open() creates the file if it doesn't exist
      * already, using secure mode
      */
     if ((fd = open(SCOREFILE, O_RDWR|O_CREAT, 0600)) == -1) {
-	    fprintf(stderr, "%s: %s: Cannot open.\n", cmdname,
-		    SCOREFILE);
-	exit(1);
+	chdir(whoami->pw_dir);
+	if ((fd = open(LOCALSCOREFILE, O_RDWR|O_CREAT, 0600)) == -1) {
+	    fprintf(stderr, "%s: ~/%s: Cannot open.\n", cmdname, LOCALSCOREFILE);
+	    exit(1);
+	}
     }
 
     lockit(true);			/* lock score file */
@@ -537,7 +550,8 @@ static void topscores(int newscore)
 	    }
 
 	    new->score = newscore;	/* fill "new" with the info */
-	    strncpy(new->user, getpwuid(getuid())->pw_name, 8);
+	    new->time = time(NULL);	/* include a timestamp */
+	    strncpy(new->user, whoami->pw_name, USERNAMELEN);
 	    (void) lseek(fd, 0, 0);	/* seek back to top of file */
 	    write(fd, toplist, SCOREFILESIZE);	/* write it all out */
 	}
@@ -546,9 +560,7 @@ static void topscores(int newscore)
     close(fd);
     lockit(false);			/* unlock score file */
 
-    if (toplist->score) 
-	puts("Rank  Score  Name     Percentage");
-    else 
+    if (!toplist->score) 
 	puts("No high scores.");	/* perhaps "greed -s" was run before *
 					 * any greed had been played? */
     if (new && tgetent(termbuf, getenv("TERM")) > 0) {
@@ -562,10 +574,18 @@ static void topscores(int newscore)
 
     /* print out list to screen, highlighting new score, if any */
     for (ptrtmp=toplist; ptrtmp < eof && ptrtmp->score; ptrtmp++, count++) {
+	struct tm when;
+	char timestr[27];
 	if (ptrtmp == new && boldon)
 	    tputs(boldon, 1, doputc);
-	printf("%-5d %-6d %-8s %.2f%%\n", count, ptrtmp->score,
-	       ptrtmp->user, (float) ptrtmp->score / 17.38);
+	(void)localtime_r(&ptrtmp->time, &when);
+	(void)strftime(timestr, sizeof(timestr), "%Y-%m-%dT%H:%M:%S", &when);
+	printf("%-5d %s %6d %5.2f%% %s\n",
+	       count,
+	       timestr,
+	       ptrtmp->score,
+	       (float) (ptrtmp->score * 100) / (HEIGHT * WIDTH),
+	       ptrtmp->user);
 	if (ptrtmp == new && boldoff) tputs(boldoff, 1, doputc);
     }
 }
