@@ -21,6 +21,8 @@ XBS-Developer-Clone: git@thyrsus.com:greed
 
 XBS-Anonymous-Clone: git://thyrsus.com/repositories/greed.git
 
+XBS-Logo: greed-logo.png
+
 #XBS-Project-Tags: Games/Entertainment
 
 XBS-VC-Tag-Template: %(version)s
