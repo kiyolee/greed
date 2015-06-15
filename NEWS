@@ -1,6 +1,6 @@
 			greed project news
 
-Repository head:
+4.1 @ 2015-06-15
   Scores are now kept in ~/.greedscores if default scorefile is unwriteable.
   Each scorefile entry includes a timestamp.
   Note: these scorefiles are not compatible with greed-3.x scorefiles!
