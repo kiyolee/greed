@@ -15,11 +15,7 @@ Homepage: http://www.catb.org/~esr/greed
 
 XBS-HTML-Target: index.html
 
-XBS-Repository-URL: http://thyrsus.com/gitweb/?p=greed.git
-
-XBS-Developer-Clone: git@thyrsus.com:greed
-
-XBS-Anonymous-Clone: git://thyrsus.com/repositories/greed.git
+XBS-Repository-URL: https://gitlab.com/esr/greed
 
 XBS-Logo: greed-logo.png
 
