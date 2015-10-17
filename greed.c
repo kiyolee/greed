@@ -39,6 +39,8 @@
  * If the string ends with a trailing :, letters following are taken as game
  * options. At present, only 'p' (equivalent to an initial 'p' command) is
  * defined.
+ *
+ * SPDX-License-Identifier: BSD-2-clause
  */
 
 static char *version = "Greed v" RELEASE;
