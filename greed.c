@@ -40,7 +40,7 @@
  * options. At present, only 'p' (equivalent to an initial 'p' command) is
  * defined.
  *
- * SPDX-License-Identifier: BSD-2-clause
+ * SPDX-License-Identifier: BSD-2-Clause
  */
 
 static char *version = "Greed v" RELEASE;
