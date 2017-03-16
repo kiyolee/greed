@@ -46,9 +46,11 @@
 static char *version = "Greed v" RELEASE;
 
 #include <stdlib.h>
+#include <unistd.h>
 #include <string.h>
 #include <ctype.h>
 #include <curses.h>
+#include <term.h>
 #include <signal.h>
 #include <pwd.h>
 #include <fcntl.h>
@@ -95,6 +97,8 @@ static char *cmdname;
 static WINDOW *helpwin = NULL;
 
 static void topscores(int);
+static int tunnel(chtype, int *);
+static int othermove(int, int);
 
 static void botmsg(char *msg, bool backcur)
 /* 
@@ -175,7 +179,7 @@ static void showscore(void)
 
 void showmoves(bool, int*);
 
-main(int argc, char **argv)
+int main(int argc, char **argv)
 {
     int val = 1;
     int attribs[9];
@@ -292,7 +296,7 @@ main(int argc, char **argv)
 }
 
 
-int tunnel(chtype cmd, int *attribs)
+static int tunnel(chtype cmd, int *attribs)
 /* 
  * tunnel() does the main game work.  Returns 1 if everything's okay, 0 if
  * user "died", and -1 if user specified and confirmed 'q' (fast quit).
@@ -412,7 +416,7 @@ int tunnel(chtype cmd, int *attribs)
     return (1);
 }
 
-int othermove(int bady, int badx)
+static int othermove(int bady, int badx)
 /* 
  * othermove() checks area for an existing possible move.  bady and
  * badx are direction variables that tell othermove() they are
@@ -493,11 +497,14 @@ void showmoves(bool on, int *attribs)
     }
 }
 
-char doputc(char c)
+static int doputc(int c)
 /* doputc() simply prints out a character to stdout, used by tputs() */
 {
     return(fputc(c, stdout));
 }
+
+/* hack to ignore GCC Unused Result */
+#define IGNORE(r) do{if(r){}}while(0)
 
 static void topscores(int newscore)
 /* 
@@ -526,7 +533,7 @@ static void topscores(int newscore)
      * already, using secure mode
      */
     if ((fd = open(SCOREFILE, O_RDWR|O_CREAT, 0600)) == -1) {
-	chdir(whoami->pw_dir);
+	IGNORE(chdir(whoami->pw_dir));
 	if ((fd = open(LOCALSCOREFILE, O_RDWR|O_CREAT, 0600)) == -1) {
 	    fprintf(stderr, "%s: ~/%s: Cannot open.\n", cmdname, LOCALSCOREFILE);
 	    exit(1);
@@ -534,9 +541,11 @@ static void topscores(int newscore)
     }
 
     lockit(true);			/* lock score file */
-    for (ptrtmp=toplist; ptrtmp < eof; ptrtmp++) ptrtmp->score = 0;
     /* initialize scores to 0 */
-    read(fd, toplist, SCOREFILESIZE);	/* read whole score file in at once */
+    for (ptrtmp=toplist; ptrtmp < eof; ptrtmp++)
+	ptrtmp->score = 0;
+    /* read whole score file in at once */
+    IGNORE(read(fd, toplist, SCOREFILESIZE));
 
     if (newscore) {			/* if possible high score */
 	for (ptrtmp=toplist; ptrtmp < eof; ptrtmp++)
@@ -554,7 +563,7 @@ static void topscores(int newscore)
 	    new->time = time(NULL);	/* include a timestamp */
 	    strncpy(new->user, whoami->pw_name, USERNAMELEN);
 	    (void) lseek(fd, 0, 0);	/* seek back to top of file */
-	    write(fd, toplist, SCOREFILESIZE);	/* write it all out */
+	    IGNORE(write(fd, toplist, SCOREFILESIZE));	/* write it all out */
 	}
     }
 
