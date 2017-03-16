@@ -1,5 +1,9 @@
 			greed project news
 
+4.2 @ 2017-03-16
+  Document the basic movement keys better on the manual page.
+  Change from BSD 3-clause to 2-clause and use SPDX tagging.
+
 4.1 @ 2015-06-15
   Scores are now kept in ~/.greedscores if default scorefile is unwriteable.
   Each scorefile entry includes a timestamp.
