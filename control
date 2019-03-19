@@ -9,13 +9,15 @@ Description: Eat as much as you can before munching yourself into a corner.
  You cannot move onto a space you have already eaten, and the game ends 
  when you cannot move.
 
-#XBS-Destinations: freshcode
+XBS-Destinations: mailto:ubuntu-devel-discuss@lists.ubuntu.com
 
 Homepage: http://www.catb.org/~esr/greed
 
 XBS-HTML-Target: index.html
 
 XBS-Repository-URL: https://gitlab.com/esr/greed
+
+XVBS-Debian-Packages: greed
 
 XBS-Logo: greed-logo.png
 
