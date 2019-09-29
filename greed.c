@@ -63,6 +63,10 @@ static const char *version = "Greed v" RELEASE;
 #include <termio.h>
 #endif
 
+#ifdef _DEBUG
+#include <assert.h>
+#endif
+
 #define ME	'@'
 
 /*
@@ -96,7 +100,7 @@ static int width = 79;
 static int maxstep = 9;
 static int status_row = 23;
 
-static int **grid = NULL;
+static int *_grid = NULL;
 static int y = 0, x = 0;
 static bool allmoves = false, havebotmsg = false;
 static int score = 0;
@@ -190,31 +194,42 @@ static void showscore(void)
 
 static void grid_free(void)
 {
-    if (grid) {
-	for (int y = 0; y < height; ++y) {
-	    if (grid[y]) free(grid[y]);
-	}
-	free(grid);
-	grid = NULL;
+    if (_grid) {
+	free(_grid);
+	_grid = NULL;
     }
 }
 
 static void grid_alloc(void)
 {
     grid_free();
-    grid = (int**) calloc(height, sizeof(int*));
-    if (!grid) {
+    _grid = (int*) calloc(height * width, sizeof(int));
+    if (!_grid) {
 	perror("grid_alloc");
 	exit(255);
     }
-    for (int y = 0; y < height; ++y) {
-	grid[y] = (int*) calloc(width, sizeof(int));
-	if (!grid[y]) {
-	    perror("grid_alloc");
-	    exit(255);
-	}
-    }
 }
+
+static int *grid_ptr(int y, int x)
+{
+#ifdef _DEBUG
+    assert(y >= 0 && y < height);
+    assert(x >= 0 && y < width);
+#endif
+    return _grid + (y*width + x);
+}
+
+#if 0 && defined(_DEBUG)
+static int *_X_grid_ptr(int line, int y, int x)
+{
+    if (y < 0 || y >= height
+	|| x < 0 || x >= width) {
+	fprintf(stderr, "line=%d y=%d x=%d\n", line, y, x);
+    }
+    return grid_ptr(y, x);
+}
+#define grid_ptr(y, x) _X_grid_ptr(__LINE__, y, x)
+#endif
 
 int main(int argc, char **argv)
 {
@@ -337,11 +352,11 @@ int main(int argc, char **argv)
 		int newval = rnd(maxstep);
 
 		attron(attribs[newval - 1]);
-		mvaddch(y, x, (grid[y][x] = newval) + '0');
+		mvaddch(y, x, (*grid_ptr(y, x) = newval) + '0');
 		attroff(attribs[newval - 1]);
 	    } else
 #endif
-		mvaddch(y, x, (grid[y][x] = rnd(maxstep)) + '0');
+		mvaddch(y, x, (*grid_ptr(y, x) = rnd(maxstep)) + '0');
 
     mvaddstr(status_row, 0, "Score: ");		/* initialize bottom line */
     mvprintw(status_row, 40, "%s - Hit '?' for help.", version);
@@ -349,7 +364,7 @@ int main(int argc, char **argv)
     standout();
     mvaddch(y, x, ME);
     standend();
-    grid[y][x] = 0;				/* eat initial square */
+    *grid_ptr(y, x) = 0;				/* eat initial square */
 
     if (allmoves) 
 	showmoves(true, attribs);
@@ -439,7 +454,7 @@ static int tunnel(chtype cmd, int *attribs)
 	return (1);
     }
     distance = (y+dy >= 0 && x+dx >= 0 && y+dy < height && x+dx < width) ?
-	grid[y+dy][x+dx] : 0;
+	*grid_ptr(y+dy, x+dx) : 0;
 
     {
 	int j = y, i = x, d = distance;
@@ -447,7 +462,7 @@ static int tunnel(chtype cmd, int *attribs)
 	do {				/* process move for validity */
 	    j += dy;
 	    i += dx;
-	    if (j >= 0 && i >= 0 && j < height && i < width && grid[j][i])
+	    if (j >= 0 && i >= 0 && j < height && i < width && *grid_ptr(j, i))
 		continue;	/* if off the screen */
 	    else if (!othermove(dy, dx)) {	/* no other good move */
 		j -= dy;
@@ -483,7 +498,7 @@ static int tunnel(chtype cmd, int *attribs)
 	y += dy;
 	x += dx;
 	score++;
-	grid[y][x] = 0;
+	*grid_ptr(y, x) = 0;
 	mvaddch(y, x, ' ');
     } while (--distance);
     standout();
@@ -508,18 +523,18 @@ static int othermove(int bady, int badx)
     for (; dy <= 1; dy++)
 	for (dx = -1; dx <= 1; dx++)
 	    if ((!dy && !dx) || (dy == bady && dx == badx) ||
-		(y+dy < 0 && x+dx < 0 && y+dy >= height && x+dx >= width))
+		(y+dy < 0) || (x+dx < 0) || (y+dy >= height) || (x+dx >= width))
 		/* don't do 0,0 or bad coordinates */
 		continue;
 	    else {
-		int j=y, i=x, d=grid[y+dy][x+dx];
+		int j=y, i=x, d=*grid_ptr(y+dy, x+dx);
 
 		if (!d) continue;
 		do {		/* "walk" the path, checking */
 		    j += dy;
 		    i += dx;
 		    if (j < 0 || i < 0 || j >= height ||
-			i >= width || !grid[j][i]) break;
+			i >= width || !*grid_ptr(j, i)) break;
 		} while (--d);
 		if (!d) return 1;	/* if "d" got to 0, *
 					 * move was okay.   */
@@ -538,17 +553,17 @@ static void showmoves(bool on, int *attribs)
     for (; dy <= 1; dy++) {
 	if (y+dy < 0 || y+dy >= height) continue;
 	for (dx = -1; dx <= 1; dx++) {
-	    int j=y, i=x, d=grid[y+dy][x+dx];
+	    int j=y, i=x, d=*grid_ptr(y+dy, x+dx);
 
 	    if (!d) continue;
 	    do {
 		j += dy;
 		i += dx;
 		if (j < 0 || i < 0 || j >= height
-		    || i >= width || !grid[j][i]) break;
+		    || i >= width || !*grid_ptr(j, i)) break;
 	    } while (--d);
 	    if (!d) {
-		int j=y, i=x, d=grid[y+dy][x+dx];
+		int j=y, i=x, d=*grid_ptr(y+dy, x+dx);
 
 		/* The next section chooses inverse-video    *
 		 * or not, and then "walks" chosen valid     *
@@ -561,14 +576,14 @@ static void showmoves(bool on, int *attribs)
 		    i += dx;
 #ifdef A_COLOR
 		    if (!on && has_colors()) {
-			int newval = grid[j][i];
+			int newval = *grid_ptr(j, i);
 			attron(attribs[newval - 1]);
 			mvaddch(j, i, newval + '0');
 			attroff(attribs[newval - 1]);
 		    }
 		    else
 #endif
-			mvaddch(j, i, grid[j][i] + '0');
+			mvaddch(j, i, *grid_ptr(j, i) + '0');
 		} while (--d);
 		if (on) standend();
 	    }
