@@ -362,7 +362,7 @@ int main(int argc, char **argv)
 				  strchr(cnames, tolower(*cp))-cnames,
 				  COLOR_BLACK);
 			attribs[cp-colors]=COLOR_PAIR(cp-colors+1);
-			if (isupper(*cp))
+			if (isupper((int)*cp))
 			    attribs[cp-colors] |= A_BOLD;
 		    }
 	    if (*cp == ':')
@@ -717,8 +717,8 @@ static void topscores(int newscore)
     /* print out list to screen, highlighting new score, if any */
     for (ptrtmp=toplist; ptrtmp < eof && ptrtmp->score; ptrtmp++, count++) {
 	struct tm when;
-	char timestr[27];
-	char sizestr[16];
+	char timestr[32];
+	char sizestr[63];
 	if (ptrtmp == new && boldon)
 	    tputs(boldon, 1, doputc);
 	(void)localtime_r(&ptrtmp->time, &when);
