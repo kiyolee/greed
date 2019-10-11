@@ -43,7 +43,7 @@
  * SPDX-License-Identifier: BSD-2-Clause
  */
 
-static char *version = "Greed v" RELEASE;
+static const char *version = "Greed v" RELEASE;
 
 #include <stdlib.h>
 #include <unistd.h>
@@ -56,12 +56,17 @@ static char *version = "Greed v" RELEASE;
 #include <fcntl.h>
 #include <stdbool.h>
 #include <time.h>
-#ifdef A_COLOR
-#include <ctype.h>
+#include <sys/ioctl.h>
+#if defined __NetBSD__ || defined __FreeBSD__ || defined __OpenBSD__
+#include <sys/ttycom.h>
+#else
+#include <termio.h>
 #endif
 
-#define HEIGHT	22
-#define WIDTH	79
+#ifdef _DEBUG
+#include <assert.h>
+#endif
+
 #define ME	'@'
 
 /*
@@ -87,18 +92,37 @@ static char *version = "Greed v" RELEASE;
 struct score {
     char user[USERNAMELEN + 1];
     time_t time;
+    int height;
+    int width;
+    int maxstep;
     int score;
 };
 
-static int grid[HEIGHT][WIDTH], y, x;
+struct score_o {
+    char user[USERNAMELEN + 1];
+    time_t time;
+    int score;
+};
+
+static int height = 22;
+static int width = 79;
+static int maxstep = 9;
+static int status_row = 23;
+
+static int *_grid = NULL;
+static int y = 0, x = 0;
 static bool allmoves = false, havebotmsg = false;
 static int score = 0;
-static char *cmdname;
+static char *cmdname = NULL;
 static WINDOW *helpwin = NULL;
 
-static void topscores(int);
 static int tunnel(chtype, int *);
 static int othermove(int, int);
+static void showmoves(bool, int*);
+
+static void topscores(int);
+static void lockit(bool);
+static void help(void);
 
 static void botmsg(char *msg, bool backcur)
 /* 
@@ -107,7 +131,7 @@ static void botmsg(char *msg, bool backcur)
  * leave it on the bottom line (e.g. for questions).
  */
 {
-    mvaddstr(23, 40, msg);
+    mvaddstr(status_row, 40, msg);
     clrtoeol();
     if (backcur) 
 	move(y, x);
@@ -136,7 +160,7 @@ static void quit(int sig)
 	    refresh();
 	    return;
 	}
-	move(23, 0);
+	move(status_row, 0);
 	refresh();
 	endwin();
 	puts("\n");
@@ -159,8 +183,26 @@ static void out(int onsig)
 static void usage(void) 
 /* usage() prints out the proper command line usage for Greed and exits. */
 {
-    fprintf(stderr, "Usage: %s [-p] [-s]\n", cmdname);
+    fprintf(stderr, "%s\nUsage: %s [-s] [-p] [-f] [-w{width}] [-h{height}] [-m{maxstep}]\n", version, cmdname);
     exit(1);
+}
+
+static float score_perc(int score, int height, int width)
+{
+    if (score <= 0) return 0.0;
+    if (score >= (height * width - 1)) return 100.0;
+    return ((float) score / (height * width - 1)) * 100.0;
+}
+
+static float score_adj(int score, int height, int width, int maxstep)
+{
+    /* TODO: score should be adjusted basing on size.
+     *       different sizes imply different diffculties.
+     */
+    if (maxstep <= 0) return 0;
+    float score_p = score_perc(score, height, width);
+    return (maxstep >= 9) ? score_p
+			  : (score_p * (float)maxstep / 9.0);
 }
 
 static void showscore(void) 
@@ -170,14 +212,51 @@ static void showscore(void)
  * cursor back on the grid, and refreshes the screen.
  */
 {
-    mvprintw(23, 7, "%d  %.2f%%",
+    mvprintw(status_row, 7, "%d  %.2f%%",
 	     score,
-	     (float)(score * 100) / (HEIGHT * WIDTH));
+	     score_perc(score, height, width));
     move(y, x);
     refresh();
 }
 
-void showmoves(bool, int*);
+static void grid_free(void)
+{
+    if (_grid) {
+	free(_grid);
+	_grid = NULL;
+    }
+}
+
+static void grid_alloc(void)
+{
+    grid_free();
+    _grid = (int*) calloc(height * width, sizeof(int));
+    if (!_grid) {
+	perror("grid_alloc");
+	exit(255);
+    }
+}
+
+static int *grid_ptr(int y, int x)
+{
+#ifdef _DEBUG
+    assert(y >= 0 && y < height);
+    assert(x >= 0 && x < width);
+#endif
+    return _grid + (y*width + x);
+}
+
+#if 0 && defined(_DEBUG)
+static int *_X_grid_ptr(int line, int y, int x)
+{
+    if (y < 0 || y >= height
+	|| x < 0 || x >= width) {
+	fprintf(stderr, "line=%d y=%d x=%d\n", line, y, x);
+    }
+    return grid_ptr(y, x);
+}
+#define grid_ptr(y, x) _X_grid_ptr(__LINE__, y, x)
+#endif
 
 int main(int argc, char **argv)
 {
@@ -188,15 +267,56 @@ int main(int argc, char **argv)
 #endif
 
     cmdname = argv[0];			/* save the command name */
-    if (argc == 2) {			/* process the command line */
-	if (strlen(argv[1]) != 2 || argv[1][0] != '-') usage();
-	if (argv[1][1] == 's') {
+
+    for (int argi = 1; argi < argc; ++argi) {
+	const char *const arg = argv[argi];
+	const char opt = (arg[0] == '-') ? arg[1] : '\0';
+	switch (opt) {
+	case 'w': case 'h': case 'm': {
+	    const char *optarg = NULL;
+	    if (arg[2] == '\0') {
+		if (++argi >= argc) {
+		    usage();
+		    return 1;
+		}
+		optarg = argv[argi];
+	    }
+	    else {
+		optarg = arg + 2;
+	    }
+	    const char *cp = optarg;
+	    while (isdigit((int)*cp)) ++cp;
+	    int optval = (cp > optarg && *cp == '\0') ? atoi(optarg) : -1;
+	    switch (opt) {
+	    case 'w': if (optval > 1) width = optval; break;
+	    case 'h': if (optval > 1) height = optval; break;
+	    case 'm': if (optval > 0 && optval < 9) maxstep = optval; break;
+	    }
+	} break;
+	case 'f': {
+	    struct winsize wnsz;
+	    if (ioctl(open("/dev/tty", O_RDONLY), TIOCGWINSZ, &wnsz) == 0) {
+		if (wnsz.ws_col > 1) width = wnsz.ws_col - 1;
+		if (wnsz.ws_row > 3) height = wnsz.ws_row - 3;
+	    }
+	} break;
+	case 'p':
+	    allmoves = true;
+	    break;
+	case 's':
 	    topscores(0);
-	    exit(0);
+	    return 0;
+	    break;
+	default:
+	    usage();
+	    return 1;
 	}
-    } 
-    else if (argc > 2)		/* can't have > 2 arguments */ 
-	usage();
+    }
+
+    if ((height+1)/2 < maxstep) maxstep = (height+1)/2;
+    if ((width+1)/2 < maxstep) maxstep = (width+1)/2;
+
+    status_row = height + 1;
 
     (void) signal(SIGINT, quit);	/* catch off the signals */
     (void) signal(SIGQUIT, quit);
@@ -242,7 +362,7 @@ int main(int argc, char **argv)
 				  strchr(cnames, tolower(*cp))-cnames,
 				  COLOR_BLACK);
 			attribs[cp-colors]=COLOR_PAIR(cp-colors+1);
-			if (isupper(*cp))
+			if (isupper((int)*cp))
 			    attribs[cp-colors] |= A_BOLD;
 		    }
 	    if (*cp == ':')
@@ -253,26 +373,28 @@ int main(int argc, char **argv)
     }
 #endif
 
-    for (y=0; y < HEIGHT; y++)		/* fill the grid array and */
-	for (x=0; x < WIDTH; x++)		/* print numbers out */
+    grid_alloc();
+
+    for (y=0; y < height; y++)		/* fill the grid array and */
+	for (x=0; x < width; x++)		/* print numbers out */
 #ifdef A_COLOR
 	    if (has_colors()) {
-		int newval = rnd(9);
+		int newval = rnd(maxstep);
 
 		attron(attribs[newval - 1]);
-		mvaddch(y, x, (grid[y][x] = newval) + '0');
+		mvaddch(y, x, (*grid_ptr(y, x) = newval) + '0');
 		attroff(attribs[newval - 1]);
 	    } else
 #endif
-		mvaddch(y, x, (grid[y][x] = rnd(9)) + '0');
+		mvaddch(y, x, (*grid_ptr(y, x) = rnd(maxstep)) + '0');
 
-    mvaddstr(23, 0, "Score: ");		/* initialize bottom line */
-    mvprintw(23, 40, "%s - Hit '?' for help.", version);
-    y = rnd(HEIGHT)-1; x = rnd(WIDTH)-1;		/* random initial location */
+    mvaddstr(status_row, 0, "Score: ");		/* initialize bottom line */
+    mvprintw(status_row, 40, "%s - Hit '?' for help.", version);
+    y = rnd(height)-1; x = rnd(width)-1;		/* random initial location */
     standout();
     mvaddch(y, x, ME);
     standend();
-    grid[y][x] = 0;				/* eat initial square */
+    *grid_ptr(y, x) = 0;				/* eat initial square */
 
     if (allmoves) 
 	showmoves(true, attribs);
@@ -287,11 +409,14 @@ int main(int argc, char **argv)
 	getch();			/* final screen              */
     }
 
-    move(23, 0);
+    move(status_row, 0);
     refresh();
     endwin();
     puts("\n");				/* writes two newlines */
     topscores(score);
+
+    grid_free();
+
     exit(0);
 }
 
@@ -303,7 +428,6 @@ static int tunnel(chtype cmd, int *attribs)
  */
 {
     int dy, dx, distance;
-    void help(void);
 
     switch (cmd) {				/* process user command */
     case 'h': case 'H': case '4':
@@ -359,8 +483,8 @@ static int tunnel(chtype cmd, int *attribs)
     default:
 	return (1);
     }
-    distance = (y+dy >= 0 && x+dx >= 0 && y+dy < HEIGHT && x+dx < WIDTH) ?
-	grid[y+dy][x+dx] : 0;
+    distance = (y+dy >= 0 && x+dx >= 0 && y+dy < height && x+dx < width) ?
+	*grid_ptr(y+dy, x+dx) : 0;
 
     {
 	int j = y, i = x, d = distance;
@@ -368,7 +492,7 @@ static int tunnel(chtype cmd, int *attribs)
 	do {				/* process move for validity */
 	    j += dy;
 	    i += dx;
-	    if (j >= 0 && i >= 0 && j < HEIGHT && i < WIDTH && grid[j][i])
+	    if (j >= 0 && i >= 0 && j < height && i < width && *grid_ptr(j, i))
 		continue;	/* if off the screen */
 	    else if (!othermove(dy, dx)) {	/* no other good move */
 		j -= dy;
@@ -395,7 +519,7 @@ static int tunnel(chtype cmd, int *attribs)
 	showmoves(false, attribs);
 
     if (havebotmsg) {			/* if old bottom msg exists */
-	mvprintw(23, 40, "%s - Hit '?' for help.", version);
+	mvprintw(status_row, 40, "%s - Hit '?' for help.", version);
 	havebotmsg = false;
     }
 
@@ -404,7 +528,7 @@ static int tunnel(chtype cmd, int *attribs)
 	y += dy;
 	x += dx;
 	score++;
-	grid[y][x] = 0;
+	*grid_ptr(y, x) = 0;
 	mvaddch(y, x, ' ');
     } while (--distance);
     standout();
@@ -429,18 +553,18 @@ static int othermove(int bady, int badx)
     for (; dy <= 1; dy++)
 	for (dx = -1; dx <= 1; dx++)
 	    if ((!dy && !dx) || (dy == bady && dx == badx) ||
-		y+dy < 0 && x+dx < 0 && y+dy >= HEIGHT && x+dx >= WIDTH)
+		(y+dy < 0) || (x+dx < 0) || (y+dy >= height) || (x+dx >= width))
 		/* don't do 0,0 or bad coordinates */
 		continue;
 	    else {
-		int j=y, i=x, d=grid[y+dy][x+dx];
+		int j=y, i=x, d=*grid_ptr(y+dy, x+dx);
 
 		if (!d) continue;
 		do {		/* "walk" the path, checking */
 		    j += dy;
 		    i += dx;
-		    if (j < 0 || i < 0 || j >= HEIGHT ||
-			i >= WIDTH || !grid[j][i]) break;
+		    if (j < 0 || i < 0 || j >= height ||
+			i >= width || !*grid_ptr(j, i)) break;
 		} while (--d);
 		if (!d) return 1;	/* if "d" got to 0, *
 					 * move was okay.   */
@@ -448,7 +572,7 @@ static int othermove(int bady, int badx)
     return 0;			/* no good moves were found */
 }
 
-void showmoves(bool on, int *attribs)
+static void showmoves(bool on, int *attribs)
 /*
  * showmoves() is nearly identical to othermove(), but it highlights possible
  * moves instead.  "on" tells showmoves() whether to add or remove moves.
@@ -457,19 +581,20 @@ void showmoves(bool on, int *attribs)
     int dy = -1, dx;
 
     for (; dy <= 1; dy++) {
-	if (y+dy < 0 || y+dy >= HEIGHT) continue;
+	if (y+dy < 0 || y+dy >= height) continue;
 	for (dx = -1; dx <= 1; dx++) {
-	    int j=y, i=x, d=grid[y+dy][x+dx];
-
+	    int j=y, i=x, d=0;
+	    if (y+dy < 0 || y+dy >= height || x+dx < 0 || x+dx >= width) continue;
+	    d = *grid_ptr(y+dy, x+dx);
 	    if (!d) continue;
 	    do {
 		j += dy;
 		i += dx;
-		if (j < 0 || i < 0 || j >= HEIGHT
-		    || i >= WIDTH || !grid[j][i]) break;
+		if (j < 0 || i < 0 || j >= height
+		    || i >= width || !*grid_ptr(j, i)) break;
 	    } while (--d);
 	    if (!d) {
-		int j=y, i=x, d=grid[y+dy][x+dx];
+		int j=y, i=x, d=*grid_ptr(y+dy, x+dx);
 
 		/* The next section chooses inverse-video    *
 		 * or not, and then "walks" chosen valid     *
@@ -482,14 +607,14 @@ void showmoves(bool on, int *attribs)
 		    i += dx;
 #ifdef A_COLOR
 		    if (!on && has_colors()) {
-			int newval = grid[j][i];
+			int newval = *grid_ptr(j, i);
 			attron(attribs[newval - 1]);
 			mvaddch(j, i, newval + '0');
 			attroff(attribs[newval - 1]);
 		    }
 		    else
 #endif
-			mvaddch(j, i, grid[j][i] + '0');
+			mvaddch(j, i, *grid_ptr(j, i) + '0');
 		} while (--d);
 		if (on) standend();
 	    }
@@ -510,17 +635,18 @@ static void topscores(int newscore)
 /* 
  * topscores() processes its argument with the high score file, makes any
  * updates to the file, and outputs the list to the screen.  If "newscore"
- * is false, the score file is printed to the screen (i.e. "greed -s")
+ * <= 0, the score file is printed to the screen (i.e. "greed -s")
  */
 {
     int fd, count = 1;
     static char termbuf[BUFSIZ];
-    char *tptr = (char *) malloc(16), *boldon, *boldoff;
+    char _tsbuf[16];
+    char *tptr = _tsbuf;
+    char *boldon = NULL, *boldoff = NULL;
     struct score *toplist = (struct score *) malloc(SCOREFILESIZE);
     struct score *ptrtmp, *eof = &toplist[MAXSCORES], *new = NULL;
     extern char *getenv(), *tgetstr();
     struct passwd *whoami;
-    void lockit(bool);
 
     (void) signal(SIGINT, SIG_IGN);	/* Catch all signals, so high */
     (void) signal(SIGQUIT, SIG_IGN);	/* score file doesn't get     */
@@ -547,10 +673,13 @@ static void topscores(int newscore)
     /* read whole score file in at once */
     IGNORE(read(fd, toplist, SCOREFILESIZE));
 
-    if (newscore) {			/* if possible high score */
-	for (ptrtmp=toplist; ptrtmp < eof; ptrtmp++)
+    if (newscore > 0) {			/* if possible high score */
+	float newscore_p = score_adj(newscore, height, width, maxstep);
+	for (ptrtmp=toplist; ptrtmp < eof; ptrtmp++) {
 	    /* find new location for score */
-	    if (newscore > ptrtmp->score) break;
+	    if (newscore_p > score_adj(ptrtmp->score, ptrtmp->height,
+				       ptrtmp->width, ptrtmp->maxstep)) break;
+	}
 	if (ptrtmp < eof) {	/* if it's a new high score */
 	    new = ptrtmp;	/* put "new" at new location */
 	    ptrtmp = eof-1;	/* start at end of list */
@@ -561,6 +690,9 @@ static void topscores(int newscore)
 
 	    new->score = newscore;	/* fill "new" with the info */
 	    new->time = time(NULL);	/* include a timestamp */
+	    new->height = height;
+	    new->width = width;
+	    new->maxstep = maxstep;
 	    strncpy(new->user, whoami->pw_name, USERNAMELEN);
 	    (void) lseek(fd, 0, 0);	/* seek back to top of file */
 	    IGNORE(write(fd, toplist, SCOREFILESIZE));	/* write it all out */
@@ -585,23 +717,33 @@ static void topscores(int newscore)
     /* print out list to screen, highlighting new score, if any */
     for (ptrtmp=toplist; ptrtmp < eof && ptrtmp->score; ptrtmp++, count++) {
 	struct tm when;
-	char timestr[27];
+	char timestr[32];
+	char sizestr[63];
 	if (ptrtmp == new && boldon)
 	    tputs(boldon, 1, doputc);
 	(void)localtime_r(&ptrtmp->time, &when);
 	(void)strftime(timestr, sizeof(timestr), "%Y-%m-%dT%H:%M:%S", &when);
-	printf("%-5d %s %6d %5.2f%% %s\n",
+	if (ptrtmp->maxstep < 9)
+	    (void)snprintf(sizestr, sizeof(sizestr), "(%dx%d:%d)",
+			   ptrtmp->width, ptrtmp->height, ptrtmp->maxstep);
+	else
+	    (void)snprintf(sizestr, sizeof(sizestr), "(%dx%d)",
+			   ptrtmp->width, ptrtmp->height);
+	printf("%-5d %s %6d %-10s %6.2f%% %s\n",
 	       count,
 	       timestr,
 	       ptrtmp->score,
-	       (float) (ptrtmp->score * 100) / (HEIGHT * WIDTH),
+	       sizestr,
+	       score_perc(ptrtmp->score, ptrtmp->height, ptrtmp->width),
 	       ptrtmp->user);
 	if (ptrtmp == new && boldoff) tputs(boldoff, 1, doputc);
     }
+
+    free(toplist);
 }
 
 
-void lockit(bool on)
+static void lockit(bool on)
 /*
  * lockit() creates a file with mode 0 to serve as a lock file.  The creat()
  * call will fail if the file exists already, since it was made with mode 0.
@@ -632,7 +774,7 @@ void lockit(bool on)
 
 #define msg(row, msg) mvwaddstr(helpwin, row, 2, msg);
 
-void help(void) 
+static void help(void) 
 /* 
  * help() simply creates a new window over stdscr, and writes the help info
  * inside it.  Uses macro msg() to save space.
