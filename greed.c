@@ -93,6 +93,7 @@ struct score {
 
 static int height = 22;
 static int width = 79;
+static int maxstep = 9;
 static int status_row = 23;
 
 static int **grid = NULL;
@@ -169,7 +170,7 @@ static void out(int onsig)
 static void usage(void) 
 /* usage() prints out the proper command line usage for Greed and exits. */
 {
-    fprintf(stderr, "%s\nUsage: %s [-s] [-f] [-w{width}] [-h{height}]\n", version, cmdname);
+    fprintf(stderr, "%s\nUsage: %s [-s] [-f] [-w{width}] [-h{height}] [-m{maxstep}]\n", version, cmdname);
     exit(1);
 }
 
@@ -229,7 +230,7 @@ int main(int argc, char **argv)
 	const char *const arg = argv[argi];
 	const char opt = (arg[0] == '-') ? arg[1] : '\0';
 	switch (opt) {
-	case 'w': case 'h': {
+	case 'w': case 'h': case 'm': {
 	    const char *optarg = NULL;
 	    if (arg[2] == '\0') {
 		if (++argi >= argc) {
@@ -244,9 +245,10 @@ int main(int argc, char **argv)
 	    const char *cp = optarg;
 	    while (isdigit((int)*cp)) ++cp;
 	    int optval = (cp > optarg && *cp == '\0') ? atoi(optarg) : -1;
-	    if (optval > 1) {
-		if (opt == 'w') width = optval;
-		else height = optval;
+	    switch (opt) {
+	    case 'w': if (optval > 1) width = optval; break;
+	    case 'h': if (optval > 1) height = optval; break;
+	    case 'm': if (optval > 0 && optval < 9) maxstep = optval; break;
 	    }
 	} break;
 	case 'f': {
@@ -265,6 +267,9 @@ int main(int argc, char **argv)
 	    return 1;
 	}
     }
+
+    if ((height+1)/2 < maxstep) maxstep = (height+1)/2;
+    if ((width+1)/2 < maxstep) maxstep = (width+1)/2;
 
     status_row = height + 1;
 
@@ -329,14 +334,14 @@ int main(int argc, char **argv)
 	for (x=0; x < width; x++)		/* print numbers out */
 #ifdef A_COLOR
 	    if (has_colors()) {
-		int newval = rnd(9);
+		int newval = rnd(maxstep);
 
 		attron(attribs[newval - 1]);
 		mvaddch(y, x, (grid[y][x] = newval) + '0');
 		attroff(attribs[newval - 1]);
 	    } else
 #endif
-		mvaddch(y, x, (grid[y][x] = rnd(9)) + '0');
+		mvaddch(y, x, (grid[y][x] = rnd(maxstep)) + '0');
 
     mvaddstr(status_row, 0, "Score: ");		/* initialize bottom line */
     mvprintw(status_row, 40, "%s - Hit '?' for help.", version);
