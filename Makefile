@@ -26,6 +26,9 @@ clean:
 	rm -f *~ *.o greed greed-*.tar.gz  greed*.rpm *.html
 	rm -f greed.6 manpage.links manpage.refs
 
+reflow:
+	@clang-format --style="{IndentWidth: 8, UseTab: ForIndentation}" -i $$(find . -name "*.[ch]")
+
 CPPCHECKOPTS =
 cppcheck:
 	cppcheck $(CPPCHECKOPTS) greed.c
