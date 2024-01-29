@@ -56,9 +56,7 @@ static char *version = "Greed v" RELEASE;
 #include <term.h>
 #include <time.h>
 #include <unistd.h>
-#ifdef A_COLOR
 #include <ctype.h>
-#endif
 
 #define HEIGHT 22
 #define WIDTH 79
@@ -176,9 +174,7 @@ void showmoves(bool, int *);
 int main(int argc, char **argv) {
 	int val = 1;
 	int attribs[9];
-#ifdef A_COLOR
 	char *colors;
-#endif
 
 	cmdname = argv[0]; /* save the command name */
 	if (argc == 2) {   /* process the command line */
@@ -205,7 +201,6 @@ int main(int argc, char **argv) {
 	srand48(time(0) ^ getpid() << 16); /* initialize the random seed *
 	                                    * with a unique number       */
 
-#ifdef A_COLOR
 	if (has_colors()) {
 		start_color();
 		init_pair(1, COLOR_YELLOW, COLOR_BLACK);
@@ -248,20 +243,18 @@ int main(int argc, char **argv) {
 						allmoves = true;
 		}
 	}
-#endif
 
 	for (y = 0; y < HEIGHT; y++)        /* fill the grid array and */
 		for (x = 0; x < WIDTH; x++) /* print numbers out */
-#ifdef A_COLOR
 			if (has_colors()) {
 				int newval = rnd(9);
 
 				attron(attribs[newval - 1]);
 				mvaddch(y, x, (grid[y][x] = newval) + '0');
 				attroff(attribs[newval - 1]);
-			} else
-#endif
+			} else {
 				mvaddch(y, x, (grid[y][x] = rnd(9)) + '0');
+			}
 
 	mvaddstr(23, 0, "Score: "); /* initialize bottom line */
 	mvprintw(23, 40, "%s - Hit '?' for help.", version);
@@ -513,15 +506,14 @@ void showmoves(bool on, int *attribs) {
 				do {
 					j += dy;
 					i += dx;
-#ifdef A_COLOR
 					if (!on && has_colors()) {
 						int newval = grid[j][i];
 						attron(attribs[newval - 1]);
 						mvaddch(j, i, newval + '0');
 						attroff(attribs[newval - 1]);
-					} else
-#endif
+					} else {
 						mvaddch(j, i, grid[j][i] + '0');
+					}
 				} while (--d);
 				if (on)
 					standend();
@@ -531,7 +523,7 @@ void showmoves(bool on, int *attribs) {
 }
 
 static int doputc(int c) {
-	/* doputc() simply prints out a character to stdout, used by tputs() */
+/* doputc() simply prints out a character to stdout, used by tputs() */
 	return (fputc(c, stdout));
 }
 
