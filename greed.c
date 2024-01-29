@@ -56,7 +56,6 @@ static char *version = "Greed v" RELEASE;
 #include <term.h>
 #include <time.h>
 #include <unistd.h>
-#include <ctype.h>
 
 #define HEIGHT 22
 #define WIDTH 79
@@ -106,8 +105,9 @@ static void botmsg(char *msg, bool backcur) {
 	 */
 	mvaddstr(23, 40, msg);
 	clrtoeol();
-	if (backcur)
+	if (backcur) {
 		move(y, x);
+	}
 	refresh();
 	havebotmsg = true;
 }
@@ -145,8 +145,9 @@ static void out(int onsig) {
 	 * out() is run when the signal SIGTERM is sent, it corrects the
 	 * terminal state (if necessary) and exits.
 	 */
-	if (stdscr)
+	if (stdscr) {
 		endwin();
+	}
 	exit(0);
 }
 
@@ -178,14 +179,16 @@ int main(int argc, char **argv) {
 
 	cmdname = argv[0]; /* save the command name */
 	if (argc == 2) {   /* process the command line */
-		if (strlen(argv[1]) != 2 || argv[1][0] != '-')
+		if (strlen(argv[1]) != 2 || argv[1][0] != '-') {
 			usage();
+		}
 		if (argv[1][1] == 's') {
 			topscores(0);
 			exit(0);
 		}
-	} else if (argc > 2) /* can't have > 2 arguments */
+	} else if (argc > 2) { /* can't have > 2 arguments */
 		usage();
+	}
 
 	(void)signal(SIGINT, quit); /* catch off the signals */
 	(void)signal(SIGQUIT, quit);
@@ -223,8 +226,8 @@ int main(int argc, char **argv) {
 			static char *cnames = " rgybmcwRGYBMCW";
 			char *cp;
 
-			for (cp = colors; *cp && *cp != ':'; cp++)
-				if (strchr(cnames, *cp) != (char *)NULL)
+			for (cp = colors; *cp && *cp != ':'; cp++) {
+				if (strchr(cnames, *cp) != (char *)NULL) {
 					if (*cp != ' ') {
 						init_pair(cp - colors + 1,
 						          strchr(cnames,
@@ -233,19 +236,25 @@ int main(int argc, char **argv) {
 						          COLOR_BLACK);
 						attribs[cp - colors] =
 						    COLOR_PAIR(cp - colors + 1);
-						if (isupper(*cp))
+						if (isupper(*cp)) {
 							attribs[cp - colors] |=
 							    A_BOLD;
+						}
 					}
-			if (*cp == ':')
-				while (*++cp)
-					if (*cp == 'p')
+				}
+			}
+			if (*cp == ':') {
+				while (*++cp) {
+					if (*cp == 'p') {
 						allmoves = true;
+					}
+				}
+			}
 		}
 	}
 
-	for (y = 0; y < HEIGHT; y++)        /* fill the grid array and */
-		for (x = 0; x < WIDTH; x++) /* print numbers out */
+	for (y = 0; y < HEIGHT; y++) {        /* fill the grid array and */
+		for (x = 0; x < WIDTH; x++) { /* print numbers out */
 			if (has_colors()) {
 				int newval = rnd(9);
 
@@ -255,6 +264,8 @@ int main(int argc, char **argv) {
 			} else {
 				mvaddch(y, x, (grid[y][x] = rnd(9)) + '0');
 			}
+		}
+	}
 
 	mvaddstr(23, 0, "Score: "); /* initialize bottom line */
 	mvprintw(23, 40, "%s - Hit '?' for help.", version);
@@ -265,13 +276,15 @@ int main(int argc, char **argv) {
 	standend();
 	grid[y][x] = 0; /* eat initial square */
 
-	if (allmoves)
+	if (allmoves) {
 		showmoves(true, attribs);
+	}
 	showscore();
 
 	/* main loop, gives tunnel() a user command */
-	while ((val = tunnel(getch(), attribs)) > 0)
+	while ((val = tunnel(getch(), attribs)) > 0) {
 		continue;
+	}
 
 	if (!val) {                             /* if didn't quit by 'q' cmd */
 		botmsg("Hit any key..", false); /* then let user examine     */
@@ -386,9 +399,10 @@ static int tunnel(chtype cmd, int *attribs) {
 			j += dy;
 			i += dx;
 			if (j >= 0 && i >= 0 && j < HEIGHT && i < WIDTH &&
-			    grid[j][i])
-				continue;              /* if off the screen */
-			else if (!othermove(dy, dx)) { /* no other good move */
+			    grid[j][i]) {
+				continue; /* if off the screen */
+			} else if (!othermove(dy,
+			                      dx)) { /* no other good move */
 				j -= dy;
 				i -= dx;
 				mvaddch(y, x, ' ');
@@ -445,29 +459,34 @@ static int othermove(int bady, int badx) {
 	 */
 	int dy = -1, dx;
 
-	for (; dy <= 1; dy++)
-		for (dx = -1; dx <= 1; dx++)
+	for (; dy <= 1; dy++) {
+		for (dx = -1; dx <= 1; dx++) {
 			if ((!dy && !dx) || (dy == bady && dx == badx) ||
 			    y + dy < 0 && x + dx < 0 && y + dy >= HEIGHT &&
-			        x + dx >= WIDTH)
+			        x + dx >= WIDTH) {
 				/* don't do 0,0 or bad coordinates */
 				continue;
-			else {
+			} else {
 				int j = y, i = x, d = grid[y + dy][x + dx];
 
-				if (!d)
+				if (!d) {
 					continue;
+				}
 				do { /* "walk" the path, checking */
 					j += dy;
 					i += dx;
 					if (j < 0 || i < 0 || j >= HEIGHT ||
-					    i >= WIDTH || !grid[j][i])
+					    i >= WIDTH || !grid[j][i]) {
 						break;
+					}
 				} while (--d);
-				if (!d)
+				if (!d) {
 					return 1; /* if "d" got to 0, *
 					           * move was okay.   */
+				}
 			}
+		}
+	}
 	return 0; /* no good moves were found */
 }
 
@@ -480,19 +499,22 @@ void showmoves(bool on, int *attribs) {
 	int dy = -1, dx;
 
 	for (; dy <= 1; dy++) {
-		if (y + dy < 0 || y + dy >= HEIGHT)
+		if (y + dy < 0 || y + dy >= HEIGHT) {
 			continue;
+		}
 		for (dx = -1; dx <= 1; dx++) {
 			int j = y, i = x, d = grid[y + dy][x + dx];
 
-			if (!d)
+			if (!d) {
 				continue;
+			}
 			do {
 				j += dy;
 				i += dx;
 				if (j < 0 || i < 0 || j >= HEIGHT ||
-				    i >= WIDTH || !grid[j][i])
+				    i >= WIDTH || !grid[j][i]) {
 					break;
+				}
 			} while (--d);
 			if (!d) {
 				int j = y, i = x, d = grid[y + dy][x + dx];
@@ -501,8 +523,9 @@ void showmoves(bool on, int *attribs) {
 				 * or not, and then "walks" chosen valid     *
 				 * move, reprinting characters with new mode */
 
-				if (on)
+				if (on) {
 					standout();
+				}
 				do {
 					j += dy;
 					i += dx;
@@ -515,15 +538,16 @@ void showmoves(bool on, int *attribs) {
 						mvaddch(j, i, grid[j][i] + '0');
 					}
 				} while (--d);
-				if (on)
+				if (on) {
 					standend();
+				}
 			}
 		}
 	}
 }
 
 static int doputc(int c) {
-/* doputc() simply prints out a character to stdout, used by tputs() */
+	/* doputc() simply prints out a character to stdout, used by tputs() */
 	return (fputc(c, stdout));
 }
 
@@ -665,8 +689,9 @@ void lockit(bool on) {
 			sleep(1);
 		}
 		close(fd);
-	} else
+	} else {
 		unlink(LOCKPATH);
+	}
 }
 
 #define msg(row, msg) mvwaddstr(helpwin, row, 2, msg);
