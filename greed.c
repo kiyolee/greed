@@ -58,8 +58,6 @@ static char *version = "Greed v" RELEASE;
 #include <time.h>
 #include <unistd.h>
 
-#define HEIGHT 22
-#define WIDTH 79
 #define ME '@'
 
 /*
@@ -88,15 +86,22 @@ struct score {
 	int score;
 };
 
-static int grid[HEIGHT][WIDTH], y, x;
+static int height = 22;
+static int width = 79;
+
+static int **grid = NULL;
+static int y = 0, x = 0;
 static bool allmoves = false, havebotmsg = false;
 static int score = 0;
-static char *cmdname;
+static char *cmdname = NULL;
 static WINDOW *helpwin = NULL;
 
 static void topscores(int);
 static int tunnel(chtype, int *);
 static int othermove(int, int);
+static void showmoves(bool, int*);
+static void lockit(bool);
+static void help(void);
 
 static void botmsg(char *msg, bool backcur) {
 	/*
@@ -166,12 +171,36 @@ static void showscore(void) {
 	 * cursor back on the grid, and refreshes the screen.
 	 */
 	mvprintw(23, 7, "%d  %.2f%%", score,
-	         (float)(score * 100) / (HEIGHT * WIDTH));
+	         (float)(score * 100) / (height * width));
 	move(y, x);
 	refresh();
 }
 
-void showmoves(bool, int *);
+static void grid_free(void) {
+	if (grid) {
+		for (int y = 0; y < height; ++y) {
+			if (grid[y]) free(grid[y]);
+		}
+		free(grid);
+		grid = NULL;
+	}
+}
+
+static void grid_alloc(void) {
+	grid_free();
+	grid = (int**) calloc(height, sizeof(int*));
+	if (!grid) {
+		perror("grid_alloc");
+		exit(255);
+	}
+	for (int y = 0; y < height; ++y) {
+		grid[y] = (int*) calloc(width, sizeof(int));
+		if (!grid[y]) {
+			perror("grid_alloc");
+			exit(255);
+		}
+	}
+}
 
 int main(int argc, char **argv) {
 	int val = 1;
@@ -256,8 +285,10 @@ int main(int argc, char **argv) {
 		}
 	}
 
-	for (y = 0; y < HEIGHT; y++) {        /* fill the grid array and */
-		for (x = 0; x < WIDTH; x++) { /* print numbers out */
+	grid_alloc();
+
+	for (y = 0; y < height; y++) {        /* fill the grid array and */
+		for (x = 0; x < width; x++) { /* print numbers out */
 			if (has_colors()) {
 				int newval = rnd(9);
 
@@ -272,8 +303,8 @@ int main(int argc, char **argv) {
 
 	mvaddstr(23, 0, "Score: "); /* initialize bottom line */
 	mvprintw(23, 40, "%s - Hit '?' for help.", version);
-	y = rnd(HEIGHT) - 1;
-	x = rnd(WIDTH) - 1; /* random initial location */
+	y = rnd(height) - 1;
+	x = rnd(width) - 1; /* random initial location */
 	attron(attribs[0]);
 	mvaddch(y, x, ME);
 	attroff(attribs[0]);
@@ -299,6 +330,9 @@ int main(int argc, char **argv) {
 	endwin();
 	puts("\n"); /* writes two newlines */
 	topscores(score);
+
+	grid_free();
+
 	exit(0);
 }
 
@@ -309,7 +343,6 @@ static int tunnel(chtype cmd, int *attribs) {
 	 * quit).
 	 */
 	int dy, dx, distance;
-	void help(void);
 
 	switch (cmd) { /* process user command */
 	case 'h':
@@ -391,7 +424,7 @@ static int tunnel(chtype cmd, int *attribs) {
 		return (1);
 	}
 	distance =
-	    (y + dy >= 0 && x + dx >= 0 && y + dy < HEIGHT && x + dx < WIDTH)
+	    (y + dy >= 0 && x + dx >= 0 && y + dy < height && x + dx < width)
 	        ? grid[y + dy][x + dx]
 	        : 0;
 
@@ -401,7 +434,7 @@ static int tunnel(chtype cmd, int *attribs) {
 		do { /* process move for validity */
 			j += dy;
 			i += dx;
-			if (j >= 0 && i >= 0 && j < HEIGHT && i < WIDTH &&
+			if (j >= 0 && i >= 0 && j < height && i < width &&
 			    grid[j][i]) {
 				continue; /* if off the screen */
 			} else if (!othermove(dy,
@@ -465,8 +498,8 @@ static int othermove(int bady, int badx) {
 	for (; dy <= 1; dy++) {
 		for (dx = -1; dx <= 1; dx++) {
 			if ((!dy && !dx) || (dy == bady && dx == badx) ||
-			    y + dy < 0 && x + dx < 0 && y + dy >= HEIGHT &&
-			        x + dx >= WIDTH) {
+			    y + dy < 0 && x + dx < 0 && y + dy >= height &&
+			        x + dx >= width) {
 				/* don't do 0,0 or bad coordinates */
 				continue;
 			} else {
@@ -478,8 +511,8 @@ static int othermove(int bady, int badx) {
 				do { /* "walk" the path, checking */
 					j += dy;
 					i += dx;
-					if (j < 0 || i < 0 || j >= HEIGHT ||
-					    i >= WIDTH || !grid[j][i]) {
+					if (j < 0 || i < 0 || j >= height ||
+					    i >= width || !grid[j][i]) {
 						break;
 					}
 				} while (--d);
@@ -493,7 +526,7 @@ static int othermove(int bady, int badx) {
 	return 0; /* no good moves were found */
 }
 
-void showmoves(bool on, int *attribs) {
+static void showmoves(bool on, int *attribs) {
 	/*
 	 * showmoves() is nearly identical to othermove(), but it highlights
 	 * possible moves instead.  "on" tells showmoves() whether to add or
@@ -502,7 +535,7 @@ void showmoves(bool on, int *attribs) {
 	int dy = -1, dx;
 
 	for (; dy <= 1; dy++) {
-		if (y + dy < 0 || y + dy >= HEIGHT) {
+		if (y + dy < 0 || y + dy >= height) {
 			continue;
 		}
 		for (dx = -1; dx <= 1; dx++) {
@@ -514,8 +547,8 @@ void showmoves(bool on, int *attribs) {
 			do {
 				j += dy;
 				i += dx;
-				if (j < 0 || i < 0 || j >= HEIGHT ||
-				    i >= WIDTH || !grid[j][i]) {
+				if (j < 0 || i < 0 || j >= height ||
+				    i >= width || !grid[j][i]) {
 					break;
 				}
 			} while (--d);
@@ -570,12 +603,12 @@ static void topscores(int newscore) {
 	 */
 	int fd, count = 1;
 	static char termbuf[BUFSIZ];
-	char *tptr = (char *)malloc(16), *boldon, *boldoff;
+	char _tsbuf[16];
+	char *tptr = _tsbuf;
+	char *boldon = NULL, *boldoff = NULL;
 	struct score *toplist = (struct score *)malloc(SCOREFILESIZE);
 	struct score *ptrtmp, *eof = &toplist[MAXSCORES], *new = NULL;
-	extern char *getenv(), *tgetstr();
 	struct passwd *whoami;
-	void lockit(bool);
 
 	(void)signal(SIGINT, SIG_IGN);  /* Catch all signals, so high */
 	(void)signal(SIGQUIT, SIG_IGN); /* score file doesn't get     */
@@ -658,15 +691,17 @@ static void topscores(int newscore) {
 		               &when);
 		printf("%-5d %s %6d %5.2f%% %s\n", count, timestr,
 		       ptrtmp->score,
-		       (float)(ptrtmp->score * 100) / (HEIGHT * WIDTH),
+		       (float)(ptrtmp->score * 100) / (height * width),
 		       ptrtmp->user);
 		if (ptrtmp == new &&boldoff) {
 			tputs(boldoff, 1, doputc);
 		}
 	}
+
+	free(toplist);
 }
 
-void lockit(bool on) {
+static void lockit(bool on) {
 	/*
 	 * lockit() creates a file with mode 0 to serve as a lock file.  The
 	 * creat() call will fail if the file exists already, since it was made
@@ -699,7 +734,7 @@ void lockit(bool on) {
 
 #define msg(row, msg) mvwaddstr(helpwin, row, 2, msg);
 
-void help(void) {
+static void help(void) {
 	/*
 	 * help() simply creates a new window over stdscr, and writes the help
 	 * info inside it.  Uses macro msg() to save space.
