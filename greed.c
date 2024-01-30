@@ -181,7 +181,7 @@ static void out(int onsig) {
 static void usage(void) {
 	/* usage() prints out the proper command line usage for Greed and exits.
 	 */
-	fprintf(stderr, "%s\nUsage: %s [-s] [-f] [-w{width}] [-h{height}] [-m{maxstep}]\n", version, cmdname);
+	fprintf(stderr, "%s\nUsage: %s [-s] [-p] [-f] [-w{width}] [-h{height}] [-m{maxstep}]\n", version, cmdname);
 	exit(1);
 }
 
@@ -288,6 +288,9 @@ int main(int argc, char **argv) {
 				if (wnsz.ws_row > 3) height = wnsz.ws_row - 3;
 			}
 		} break;
+		case 'p':
+			allmoves = true;
+			break;
 		case 's':
 			topscores(0);
 			return 0;
