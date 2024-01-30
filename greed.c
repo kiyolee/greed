@@ -60,6 +60,8 @@ static const char *version = "Greed v" RELEASE;
 #include <sys/ioctl.h>
 #if defined __NetBSD__ || defined __FreeBSD__ || defined __OpenBSD__
 #include <sys/ttycom.h>
+#elif defined __APPLE__
+#include <termios.h>
 #else
 #include <termio.h>
 #endif
