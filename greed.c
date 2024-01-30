@@ -779,7 +779,7 @@ static void topscores(int newscore) {
 		(void)localtime_r(&ptrtmp->time, &when);
 		(void)strftime(timestr, sizeof(timestr), "%Y-%m-%dT%H:%M:%S",
 		               &when);
-		if (maxstep < 9)
+		if (ptrtmp->maxstep < 9)
 			(void)snprintf(sizestr, sizeof(sizestr), "(%dx%d:%d)",
 				       ptrtmp->width, ptrtmp->height, ptrtmp->maxstep);
 		else
