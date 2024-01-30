@@ -44,7 +44,7 @@
  * SPDX-License-Identifier: BSD-2-Clause
  */
 
-static char *version = "Greed v" RELEASE;
+static const char *version = "Greed v" RELEASE;
 
 #include <ctype.h>
 #include <curses.h>
@@ -57,6 +57,12 @@ static char *version = "Greed v" RELEASE;
 #include <term.h>
 #include <time.h>
 #include <unistd.h>
+#include <sys/ioctl.h>
+#if defined __NetBSD__ || defined __FreeBSD__ || defined __OpenBSD__
+#include <sys/ttycom.h>
+#else
+#include <termio.h>
+#endif
 
 #define ME '@'
 
@@ -88,6 +94,7 @@ struct score {
 
 static int height = 22;
 static int width = 79;
+static int status_row = 23;
 
 static int **grid = NULL;
 static int y = 0, x = 0;
@@ -109,7 +116,7 @@ static void botmsg(char *msg, bool backcur) {
 	 * Boolean "backcur" specifies whether to put cursor back on the grid or
 	 * leave it on the bottom line (e.g. for questions).
 	 */
-	mvaddstr(23, 40, msg);
+	mvaddstr(status_row, 40, msg);
 	clrtoeol();
 	if (backcur) {
 		move(y, x);
@@ -137,7 +144,7 @@ static void quit(int sig) {
 			refresh();
 			return;
 		}
-		move(23, 0);
+		move(status_row, 0);
 		refresh();
 		endwin();
 		puts("\n");
@@ -160,7 +167,7 @@ static void out(int onsig) {
 static void usage(void) {
 	/* usage() prints out the proper command line usage for Greed and exits.
 	 */
-	fprintf(stderr, "Usage: %s [-p] [-s]\n", cmdname);
+	fprintf(stderr, "%s\nUsage: %s [-s] [-f] [-w{width}] [-h{height}]\n", version, cmdname);
 	exit(1);
 }
 
@@ -170,7 +177,7 @@ static void showscore(void) {
 	 * at the beginning of the bottom line of the screen, moves the
 	 * cursor back on the grid, and refreshes the screen.
 	 */
-	mvprintw(23, 7, "%d  %.2f%%", score,
+	mvprintw(status_row, 7, "%d  %.2f%%", score,
 	         (float)(score * 100) / (height * width));
 	move(y, x);
 	refresh();
@@ -208,17 +215,49 @@ int main(int argc, char **argv) {
 	char *colors;
 
 	cmdname = argv[0]; /* save the command name */
-	if (argc == 2) {   /* process the command line */
-		if (strlen(argv[1]) != 2 || argv[1][0] != '-') {
-			usage();
-		}
-		if (argv[1][1] == 's') {
+
+	for (int argi = 1; argi < argc; ++argi) {
+		const char *const arg = argv[argi];
+		const char opt = (arg[0] == '-') ? arg[1] : '\0';
+		switch (opt) {
+		case 'w': case 'h': {
+			const char *optarg = NULL;
+			const char *cp;
+			if (arg[2] == '\0') {
+				if (++argi >= argc) {
+					usage();
+					return 1;
+				}
+				optarg = argv[argi];
+			}
+			else {
+				optarg = arg + 2;
+			}
+			cp = optarg;
+			while (isdigit((int)*cp)) ++cp;
+			int optval = (cp > optarg && *cp == '\0') ? atoi(optarg) : -1;
+			if (optval > 1) {
+				if (opt == 'w') width = optval;
+				else height = optval;
+			}
+		} break;
+		case 'f': {
+			struct winsize wnsz;
+			if (ioctl(open("/dev/tty", O_RDONLY), TIOCGWINSZ, &wnsz) == 0) {
+				if (wnsz.ws_col > 1) width = wnsz.ws_col - 1;
+				if (wnsz.ws_row > 3) height = wnsz.ws_row - 3;
+			}
+		} break;
+		case 's':
 			topscores(0);
-			exit(0);
+			return 0;
+		default:
+			usage();
+			return 1;
 		}
-	} else if (argc > 2) { /* can't have > 2 arguments */
-		usage();
 	}
+
+	status_row = height + 1;
 
 	(void)signal(SIGINT, quit); /* catch off the signals */
 	(void)signal(SIGQUIT, quit);
@@ -301,8 +340,8 @@ int main(int argc, char **argv) {
 		}
 	}
 
-	mvaddstr(23, 0, "Score: "); /* initialize bottom line */
-	mvprintw(23, 40, "%s - Hit '?' for help.", version);
+	mvaddstr(status_row, 0, "Score: "); /* initialize bottom line */
+	mvprintw(status_row, 40, "%s - Hit '?' for help.", version);
 	y = rnd(height) - 1;
 	x = rnd(width) - 1; /* random initial location */
 	attron(attribs[0]);
@@ -325,7 +364,7 @@ int main(int argc, char **argv) {
 		getch();                        /* final screen              */
 	}
 
-	move(23, 0);
+	move(status_row, 0);
 	refresh();
 	endwin();
 	puts("\n"); /* writes two newlines */
@@ -464,7 +503,7 @@ static int tunnel(chtype cmd, int *attribs) {
 	}
 
 	if (havebotmsg) { /* if old bottom msg exists */
-		mvprintw(23, 40, "%s - Hit '?' for help.", version);
+		mvprintw(status_row, 40, "%s - Hit '?' for help.", version);
 		havebotmsg = false;
 	}
 
