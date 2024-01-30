@@ -621,7 +621,9 @@ static void showmoves(bool on, int *attribs) {
 			continue;
 		}
 		for (dx = -1; dx <= 1; dx++) {
-			int j = y, i = x, d = *grid_ptr(y + dy, x + dx);
+			int j = y, i = x, d = 0;
+			if (y+dy < 0 || y+dy >= height || x+dx < 0 || x+dx >= width) continue;
+			d = *grid_ptr(y + dy, x + dx);
 
 			if (!d) {
 				continue;
