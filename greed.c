@@ -93,6 +93,15 @@ static const char *version = "Greed v" RELEASE;
 struct score {
 	char user[USERNAMELEN + 1];
 	time_t time;
+	int height;
+	int width;
+	int maxstep;
+	int score;
+};
+
+struct score_o {
+	char user[USERNAMELEN + 1];
+	time_t time;
 	int score;
 };
 
@@ -176,6 +185,22 @@ static void usage(void) {
 	exit(1);
 }
 
+static float score_perc(int score, int height, int width) {
+	if (score <= 0) return 0.0;
+	if (score >= (height * width - 1)) return 100.0;
+	return ((float) score / (height * width - 1)) * 100.0;
+}
+
+static float score_adj(int score, int height, int width, int maxstep) {
+	/* TODO: score should be adjusted basing on size.
+	 *       different sizes imply different diffculties.
+	 */
+	if (maxstep <= 0) return 0;
+	float score_p = score_perc(score, height, width);
+	return (maxstep >= 9) ? score_p
+			      : (score_p * (float)maxstep / 9.0);
+}
+
 static void showscore(void) {
 	/*
 	 * showscore() prints the score and the percentage of the screen eaten
@@ -183,7 +208,7 @@ static void showscore(void) {
 	 * cursor back on the grid, and refreshes the screen.
 	 */
 	mvprintw(status_row, 7, "%d  %.2f%%", score,
-	         (float)(score * 100) / (height * width));
+		 score_perc(score, height, width));
 	move(y, x);
 	refresh();
 }
@@ -207,7 +232,7 @@ static void grid_alloc(void) {
 static int *grid_ptr(int y, int x) {
 #ifdef _DEBUG
 	assert(y >= 0 && y < height);
-	assert(x >= 0 && y < width);
+	assert(x >= 0 && x < width);
 #endif
 	return _grid + (y*width + x);
 }
@@ -655,7 +680,7 @@ static void topscores(int newscore) {
 	/*
 	 * topscores() processes its argument with the high score file, makes
 	 * any updates to the file, and outputs the list to the screen.  If
-	 * "newscore" is false, the score file is printed to the screen (i.e.
+	 * "newscore" <= 0, the score file is printed to the screen (i.e.
 	 * "greed -s")
 	 */
 	int fd, count = 1;
@@ -694,10 +719,12 @@ static void topscores(int newscore) {
 	/* read whole score file in at once */
 	IGNORE(read(fd, toplist, SCOREFILESIZE));
 
-	if (newscore) { /* if possible high score */
+	if (newscore > 0) { /* if possible high score */
+		float newscore_p = score_adj(newscore, height, width, maxstep);
 		for (ptrtmp = toplist; ptrtmp < eof; ptrtmp++) {
 			/* find new location for score */
-			if (newscore > ptrtmp->score) {
+			if (newscore_p > score_adj(ptrtmp->score, ptrtmp->height,
+						   ptrtmp->width, ptrtmp->maxstep)) {
 				break;
 			}
 		}
@@ -711,6 +738,9 @@ static void topscores(int newscore) {
 
 			new->score = newscore;  /* fill "new" with the info */
 			new->time = time(NULL); /* include a timestamp */
+			new->height = height;
+			new->width = width;
+			new->maxstep = maxstep;
 			strncpy(new->user, whoami->pw_name, USERNAMELEN);
 			(void)lseek(fd, 0, 0); /* seek back to top of file */
 			IGNORE(write(fd, toplist,
@@ -740,15 +770,25 @@ static void topscores(int newscore) {
 	     ptrtmp++, count++) {
 		struct tm when;
 		char timestr[27];
+		char sizestr[16];
 		if (ptrtmp == new &&boldon) {
 			tputs(boldon, 1, doputc);
 		}
 		(void)localtime_r(&ptrtmp->time, &when);
 		(void)strftime(timestr, sizeof(timestr), "%Y-%m-%dT%H:%M:%S",
 		               &when);
-		printf("%-5d %s %6d %5.2f%% %s\n", count, timestr,
+		if (maxstep < 9)
+			(void)snprintf(sizestr, sizeof(sizestr), "(%dx%d:%d)",
+				       ptrtmp->width, ptrtmp->height, ptrtmp->maxstep);
+		else
+			(void)snprintf(sizestr, sizeof(sizestr), "(%dx%d)",
+				       ptrtmp->width, ptrtmp->height);
+		printf("%-5d %s %6d %-10s %6.2f%% %s\n",
+		       count,
+		       timestr,
 		       ptrtmp->score,
-		       (float)(ptrtmp->score * 100) / (height * width),
+		       sizestr,
+		       score_perc(ptrtmp->score, ptrtmp->height, ptrtmp->width),
 		       ptrtmp->user);
 		if (ptrtmp == new &&boldoff) {
 			tputs(boldoff, 1, doputc);
