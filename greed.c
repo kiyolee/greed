@@ -353,7 +353,7 @@ int main(int argc, char **argv) {
 						          COLOR_BLACK);
 						attribs[cp - colors] =
 						    COLOR_PAIR(cp - colors + 1);
-						if (isupper(*cp)) {
+						if (isupper((int)*cp)) {
 							attribs[cp - colors] |=
 							    A_BOLD;
 						}
@@ -774,8 +774,8 @@ static void topscores(int newscore) {
 	for (ptrtmp = toplist; ptrtmp < eof && ptrtmp->score;
 	     ptrtmp++, count++) {
 		struct tm when;
-		char timestr[27];
-		char sizestr[16];
+		char timestr[32];
+		char sizestr[64];
 		if (ptrtmp == new &&boldon) {
 			tputs(boldon, 1, doputc);
 		}
