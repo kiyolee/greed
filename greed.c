@@ -722,35 +722,23 @@ void help(void) {
 		    helpwin, 1, 2,
 		    "Welcome to %s, by Matthew Day <mday@iconsys.uu.net>.",
 		    version);
-		msg(3, " The object of Greed is to erase as much of the screen "
-		       "as");
-		msg(4, " possible by moving around in a grid of numbers.  To "
-		       "move,");
-		msg(5, " use the arrow keys, your number pad, or one of the "
-		       "letters");
+		// clang-format off
+		msg(3,  " The object of Greed is to erase as much of the screen as");
+		msg(4,  " possible by moving around in a grid of numbers.  To move,");
+		msg(5,  " use the arrow keys, your number pad, or one of the letters");
 		mvwprintw(helpwin, 6, 2,
-		          " 'hjklyubn'. Your location is signified by the '%c' "
-		          "symbol.",
-		          ME);
-		msg(7, " When you move in a direction, you erase N number of "
-		       "grid");
-		msg(8, " squares in that direction, N being the first number "
-		       "in that");
-		msg(9, " direction.  Your score reflects the total number of "
-		       "squares");
-		msg(10, " eaten.  Greed will not let you make a move that "
-		        "would have");
-		msg(11, " placed you off the grid or over a previously eaten "
-		        "square");
-		msg(12, " unless no valid moves exist, in which case your game "
-		        "ends.");
-		msg(13,
-		    " Other Greed commands are 'Ctrl-L' to redraw the screen,");
-		msg(14, " 'p' to toggle the highlighting of the possible "
-		        "moves, and");
-		msg(15,
-		    " 'q' to quit.  Command line options to Greed are '-s' to");
+		        " 'hjklyubn'. Your location is signified by the '%c' symbol.", ME);
+		msg(7,  " When you move in a direction, you erase N number of grid");
+		msg(8,  " squares in that direction, N being the first number in that");
+		msg(9,  " direction.  Your score reflects the total number of squares");
+		msg(10, " eaten.  Greed will not let you make a move that would have");
+		msg(11, " placed you off the grid or over a previously eaten square");
+		msg(12, " unless no valid moves exist, in which case your game ends.");
+		msg(13, " Other Greed commands are 'Ctrl-L' to redraw the screen,");
+		msg(14, " 'p' to toggle the highlighting of the possible moves, and");
+		msg(15, " 'q' to quit.  Command line options to Greed are '-s' to");
 		msg(16, " output the high score file.");
+		// clang-format on
 
 		(void)wmove(helpwin, 17, 64);
 		wrefresh(helpwin);
