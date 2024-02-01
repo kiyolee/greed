@@ -1,6 +1,6 @@
 # Makefile for Greed
 
-VERS=4.2
+VERS=$(shell sed -n <NEWS.adoc '/^[0-9]/s/:.*//p' | head -1)
 
 SFILE=/usr/games/lib/greed.hs
 # Location of game executable
@@ -37,7 +37,7 @@ CPPCHECKOPTS =
 cppcheck:
 	cppcheck $(CPPCHECKOPTS) greed.c
 
-SOURCES = README NEWS COPYING Makefile greed.c greed.xml control greed-logo.png
+SOURCES = README NEWS.adoc COPYING Makefile greed.c greed.xml control greed-logo.png
 
 greed-$(VERS).tar.gz: $(SOURCES) greed.6
 	@ls $(SOURCES) greed.6 | sed s:^:greed-$(VERS)/: >MANIFEST

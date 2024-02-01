@@ -1,30 +1,32 @@
-			greed project news
+= greed project news
 
-4.2 @ 2017-03-16
+Repository head::
+  Code cleanup for
+
+4.2: 2017-03-16::
   Document the basic movement keys better on the manual page.
   Change from BSD 3-clause to 2-clause and use SPDX tagging.
 
-4.1 @ 2015-06-15
+4.1: 2015-06-15::
   Scores are now kept in ~/.greedscores if default scorefile is unwriteable.
   Each scorefile entry includes a timestamp.
   Note: these scorefiles are not compatible with greed-3.x scorefiles!
 
-3.11 @ 2015-94-05
+3.11: 2015-94-05::
   Code passes validation with cppcheck.
 
-3.10 @ 2014-05-14:
+3.10: 2014-05-14::
   Fix a GREEDOPTS bug reported by Yu-Jie Lin <livibetter@gmail.com>
 
-3.9 @ 2013-10-23:
+3.9: 2013-10-23::
   Minor improvements to in-game help and score management.
 
-3.8 @ 2012-01-18:
+3.8: 2012-01-18::
   Fix for gcc4's real booleans from Kiyo Kelvin.
 
-3.7 @ 3010-10-20:
+3.7: 3010-10-20::
   Clean up C for modern POSIX and C99-conformant environments.
   License changed to BSD.
 
-3.6 @ 2003-12-29:
+3.6: 2003-12-29::
   Source RPMS no longer depend on --define myversion.
-
