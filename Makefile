@@ -9,12 +9,16 @@ BIN=/usr/games
 greed: greed.c
 	$(CC) $(CPPFLAGS) $(CFLAGS) $(LDFLAGS) -DSCOREFILE=\"$(SFILE)\" -DRELEASE=\"$(VERS)\" -o greed greed.c -O3 -lcurses
 
-greed.6: greed.xml
-	xmlto man greed.xml
+# Note: to suppress the footers with timestamps being generated in HTML,
+# we use "-a nofooter".
+# To debug asciidoc problems, you may need to run "xmllint --nonet --noout --valid"
+# on the intermediate XML that throws an error.
+.SUFFIXES: .html .adoc .6
 
-greed.html: greed.xml
-	xmlto html-nochunks greed.xml
-
+.adoc.6:
+	asciidoctor -D. -a nofooter -b manpage $<
+.adoc.html:
+	asciidoctor -D. -a nofooter -a webfonts! $<
 install: greed.6 uninstall
 	cp greed $(BIN)
 	cp greed.6 /usr/share/man/man6/greed.6
