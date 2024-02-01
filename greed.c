@@ -40,6 +40,7 @@
  * options. At present, only 'p' (equivalent to an initial 'p' command) is
  * defined.
  *
+ * SPDX-FileCopyrightText: (C) Eric S. Raymond <esr@thyrsus.com>
  * SPDX-License-Identifier: BSD-2-Clause
  */
 
