@@ -37,7 +37,7 @@ CPPCHECKOPTS =
 cppcheck:
 	cppcheck --quiet $(CPPCHECKOPTS) greed.c
 
-SOURCES = README NEWS.adoc COPYING Makefile greed.c greed.xml control greed-logo.png
+SOURCES = README NEWS.adoc COPYING Makefile greed.c greed.adoc control greed-logo.png
 
 greed-$(VERS).tar.gz: $(SOURCES) greed.6
 	@ls $(SOURCES) greed.6 | sed s:^:greed-$(VERS)/: >MANIFEST

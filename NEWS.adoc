@@ -1,6 +1,6 @@
 = greed project news
 
-Repository head::
+4.3: 2024-02-07::
   Code cleanup for moden C. Add validation.
   Make the @ for the player's position more visible
 
