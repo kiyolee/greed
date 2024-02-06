@@ -13,7 +13,7 @@ The 4.x versions change the scorefile format to allow longer usernames and
 include a timestamp.  If the shared scorefile isn't writable, scores are
 written and read from ~/.greedscores.
 
-Note: you need to have xmlto installed to build the documentation.
+Note: you need to have asciidoctor installed to build the documentation.
 
 -------------------------------------------------------------------------------
 Welcome to Greed v3.0a!

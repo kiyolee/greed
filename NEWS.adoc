@@ -1,7 +1,7 @@
 = greed project news
 
 Repository head::
-  Code cleanup for
+  Code cleanup for moden C. Add validation.
 
 4.2: 2017-03-16::
   Document the basic movement keys better on the manual page.
