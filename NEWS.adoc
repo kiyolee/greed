@@ -2,6 +2,7 @@
 
 Repository head::
   Code cleanup for moden C. Add validation.
+  Make the @ for the player's position more visible
 
 4.2: 2017-03-16::
   Document the basic movement keys better on the manual page.

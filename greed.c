@@ -175,7 +175,7 @@ void showmoves(bool, int *);
 
 int main(int argc, char **argv) {
 	int val = 1;
-	int attribs[9];
+	int attribs[10];
 	char *colors;
 
 	cmdname = argv[0]; /* save the command name */
@@ -207,21 +207,23 @@ int main(int argc, char **argv) {
 
 	if (has_colors()) {
 		start_color();
+		init_pair(0, COLOR_WHITE, COLOR_BLACK);
 		init_pair(1, COLOR_YELLOW, COLOR_BLACK);
 		init_pair(2, COLOR_RED, COLOR_BLACK);
 		init_pair(3, COLOR_GREEN, COLOR_BLACK);
 		init_pair(4, COLOR_CYAN, COLOR_BLACK);
 		init_pair(5, COLOR_MAGENTA, COLOR_BLACK);
 
-		attribs[0] = COLOR_PAIR(1);
-		attribs[1] = COLOR_PAIR(2);
-		attribs[2] = COLOR_PAIR(3);
-		attribs[3] = COLOR_PAIR(4);
-		attribs[4] = COLOR_PAIR(5);
-		attribs[5] = COLOR_PAIR(1) | A_BOLD;
-		attribs[6] = COLOR_PAIR(2) | A_BOLD;
-		attribs[7] = COLOR_PAIR(3) | A_BOLD;
-		attribs[8] = COLOR_PAIR(4) | A_BOLD;
+		attribs[0] = COLOR_PAIR(0) | A_BOLD;
+		attribs[1] = COLOR_PAIR(1);
+		attribs[2] = COLOR_PAIR(2);
+		attribs[3] = COLOR_PAIR(3);
+		attribs[4] = COLOR_PAIR(4);
+		attribs[5] = COLOR_PAIR(5);
+		attribs[6] = COLOR_PAIR(1) | A_BOLD;
+		attribs[7] = COLOR_PAIR(2) | A_BOLD;
+		attribs[8] = COLOR_PAIR(3) | A_BOLD;
+		attribs[9] = COLOR_PAIR(4) | A_BOLD;
 
 		if ((colors = getenv("GREEDOPTS")) != (char *)NULL) {
 			static char *cnames = " rgybmcwRGYBMCW";
@@ -259,9 +261,9 @@ int main(int argc, char **argv) {
 			if (has_colors()) {
 				int newval = rnd(9);
 
-				attron(attribs[newval - 1]);
+				attron(attribs[newval]);
 				mvaddch(y, x, (grid[y][x] = newval) + '0');
-				attroff(attribs[newval - 1]);
+				attroff(attribs[newval]);
 			} else {
 				mvaddch(y, x, (grid[y][x] = rnd(9)) + '0');
 			}
@@ -272,9 +274,9 @@ int main(int argc, char **argv) {
 	mvprintw(23, 40, "%s - Hit '?' for help.", version);
 	y = rnd(HEIGHT) - 1;
 	x = rnd(WIDTH) - 1; /* random initial location */
-	standout();
+	attron(attribs[0]);
 	mvaddch(y, x, ME);
-	standend();
+	attroff(attribs[0]);
 	grid[y][x] = 0; /* eat initial square */
 
 	if (allmoves) {
@@ -441,9 +443,9 @@ static int tunnel(chtype cmd, int *attribs) {
 		grid[y][x] = 0;
 		mvaddch(y, x, ' ');
 	} while (--distance);
-	standout();
+	attron(attribs[0]);
 	mvaddch(y, x, ME); /* put new ME */
-	standend();
+	attroff(attribs[0]);
 	if (allmoves) {
 		showmoves(true, attribs); /* put new possible moves */
 	}
