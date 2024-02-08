@@ -79,7 +79,7 @@ defined.
 [[authors]]
 == AUTHORS == Originally written
 Written by Matt Day.  Maintained by <esr@snark.thyrsus.com>. See ESR's home
-page at http://www.catb.org/~esr/'>http://www.catb.org/~esr/ for
+page at http://www.catb.org/~esr/ for
 updates and other resources.
 
 [[bugs]]
