@@ -177,6 +177,7 @@ int main(int argc, char **argv) {
 	int val = 1;
 	int attribs[10];
 	char *colors;
+	int i;
 
 	cmdname = argv[0]; /* save the command name */
 	if (argc == 2) {   /* process the command line */
@@ -194,6 +195,11 @@ int main(int argc, char **argv) {
 	(void)signal(SIGINT, quit); /* catch off the signals */
 	(void)signal(SIGQUIT, quit);
 	(void)signal(SIGTERM, out);
+
+	for (i = 0; i < 10; i++) {
+		attribs[i] = 0;
+	}
+	attribs[0] = A_BOLD;
 
 	initscr(); /* set up the terminal modes */
 #ifdef KEY_MIN
@@ -229,19 +235,20 @@ int main(int argc, char **argv) {
 			static char *cnames = " rgybmcwRGYBMCW";
 			char *cp;
 
-			for (cp = colors; *cp && *cp != ':'; cp++) {
+			int idx;
+
+			for (cp = colors, idx = 1;
+			     *cp && *cp != ':' && idx <= 9; cp++, idx++) {
 				if (strchr(cnames, *cp) != (char *)NULL) {
 					if (*cp != ' ') {
-						init_pair(cp - colors + 1,
+						init_pair(idx,
 						          strchr(cnames,
 						                 tolower(*cp)) -
 						              cnames,
 						          COLOR_BLACK);
-						attribs[cp - colors] =
-						    COLOR_PAIR(cp - colors + 1);
+						attribs[idx] = COLOR_PAIR(idx);
 						if (isupper(*cp)) {
-							attribs[cp - colors] |=
-							    A_BOLD;
+							attribs[idx] |= A_BOLD;
 						}
 					}
 				}
@@ -465,7 +472,7 @@ static int othermove(int bady, int badx) {
 	for (; dy <= 1; dy++) {
 		for (dx = -1; dx <= 1; dx++) {
 			if ((!dy && !dx) || (dy == bady && dx == badx) ||
-			    y + dy < 0 && x + dx < 0 && y + dy >= HEIGHT &&
+			    y + dy < 0 || x + dx < 0 || y + dy >= HEIGHT ||
 			        x + dx >= WIDTH) {
 				/* don't do 0,0 or bad coordinates */
 				continue;
@@ -506,6 +513,9 @@ void showmoves(bool on, int *attribs) {
 			continue;
 		}
 		for (dx = -1; dx <= 1; dx++) {
+			if (x + dx < 0 || x + dx >= WIDTH) {
+				continue;
+			}
 			int j = y, i = x, d = grid[y + dy][x + dx];
 
 			if (!d) {
@@ -534,9 +544,9 @@ void showmoves(bool on, int *attribs) {
 					i += dx;
 					if (!on && has_colors()) {
 						int newval = grid[j][i];
-						attron(attribs[newval - 1]);
+						attron(attribs[newval]);
 						mvaddch(j, i, newval + '0');
-						attroff(attribs[newval - 1]);
+						attroff(attribs[newval]);
 					} else {
 						mvaddch(j, i, grid[j][i] + '0');
 					}
@@ -570,7 +580,7 @@ static void topscores(int newscore) {
 	 */
 	int fd, count = 1;
 	static char termbuf[BUFSIZ];
-	char *tptr = (char *)malloc(16), *boldon, *boldoff;
+	char *tptr = (char *)malloc(16), *boldon = NULL, *boldoff = NULL;
 	struct score *toplist = (struct score *)malloc(SCOREFILESIZE);
 	struct score *ptrtmp, *eof = &toplist[MAXSCORES], *new = NULL;
 	extern char *getenv(), *tgetstr();
@@ -622,6 +632,7 @@ static void topscores(int newscore) {
 			new->score = newscore;  /* fill "new" with the info */
 			new->time = time(NULL); /* include a timestamp */
 			strncpy(new->user, whoami->pw_name, USERNAMELEN);
+			new->user[USERNAMELEN] = '\0';
 			(void)lseek(fd, 0, 0); /* seek back to top of file */
 			IGNORE(write(fd, toplist,
 			             SCOREFILESIZE)); /* write it all out */

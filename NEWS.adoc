@@ -1,5 +1,8 @@
 = greed project news
 
+Repository head::
+  Code hardening with ChatGPT 52.
+
 4.3: 2024-02-07::
   Code cleanup for moden C. Add validation.
   Make the @ for the player's position more visible
