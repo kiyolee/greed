@@ -35,7 +35,7 @@ reflow:
 
 CPPCHECKOPTS =
 cppcheck:
-	cppcheck --quiet $(CPPCHECKOPTS) greed.c
+	@cppcheck --quiet $(CPPCHECKOPTS) greed.c
 
 SOURCES = README NEWS.adoc COPYING Makefile greed.c greed.adoc control greed-logo.png
 
