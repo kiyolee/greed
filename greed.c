@@ -580,12 +580,18 @@ static void topscores(int newscore) {
 	 */
 	int fd, count = 1;
 	static char termbuf[BUFSIZ];
-	char *tptr = (char *)malloc(16), *boldon = NULL, *boldoff = NULL;
+	char *tptr = (char *)malloc(2048), *boldon = NULL, *boldoff = NULL;
 	struct score *toplist = (struct score *)malloc(SCOREFILESIZE);
 	struct score *ptrtmp, *eof = &toplist[MAXSCORES], *new = NULL;
 	extern char *getenv(), *tgetstr();
 	struct passwd *whoami;
 	void lockit(bool);
+	const char *termname;
+
+	if (!tptr || !toplist) {
+		fprintf(stderr, "%s: out of memory.\n", cmdname);
+		exit(1);
+	}
 
 	(void)signal(SIGINT, SIG_IGN);  /* Catch all signals, so high */
 	(void)signal(SIGQUIT, SIG_IGN); /* score file doesn't get     */
@@ -593,6 +599,17 @@ static void topscores(int newscore) {
 	(void)signal(SIGHUP, SIG_IGN);
 
 	whoami = getpwuid(getuid());
+	if (!whoami) {
+		fprintf(stderr, "%s: no passwd entry for uid %ld.\n", cmdname,
+		        (long)getuid());
+		exit(1);
+	}
+
+	termname = getenv("TERM");
+	if (!termname) {
+		fprintf(stderr, "%s: TERM is not set.\n", cmdname);
+		exit(1);
+	}
 
 	/* following open() creates the file if it doesn't exist
 	 * already, using secure mode
@@ -646,7 +663,7 @@ static void topscores(int newscore) {
 		puts("No high scores."); /* perhaps "greed -s" was run before *
 		                          * any greed had been played? */
 	}
-	if (new &&tgetent(termbuf, getenv("TERM")) > 0) {
+	if (new &&tgetent(termbuf, termname) > 0) {
 		/* grab escape sequences for standout */
 		boldon = tgetstr("so", &tptr);
 		boldoff = tgetstr("se", &tptr);
