@@ -1,10 +1,10 @@
-			Welcome to greed
+= Welcome to greed
 
 This game is now maintained by Eric S. Raymond <esr@snark.thyrsus.com>.  Matt
 Day dropped out of sight and hasn't posted a new version or patch since 1990.
 You can surf to the latest version from
 
-	http://www.catb.org/~esr/
+http://www.catb.org/~esr/
 
 The 3.1 version features better interrupt handling and the `p' suffix to
 GREEDOPTS.
@@ -15,13 +15,17 @@ written and read from ~/.greedscores.
 
 Note: you need to have asciidoctor installed to build the documentation.
 
--------------------------------------------------------------------------------
+This code is commonly packaged as "greed".
+
+image:https://repology.org/badge/vertical-allrepos/greed.svg[Repology
+package status]
+
+Matt Day's README:
+
 Welcome to Greed v3.0a!
 To install Greed, simply edit the Makefile to configure your system type, and
 run "make install".  It should compile the program and install it correctly.
 It does run set-uid, but there is no danger of security problems.
-
-New features to v3.0a:
 
 I certainly hope that no patches need to be made to this game. (Yeah, sure..)
 Although this might not validate a true version step from 2.1a to 3.0, I think
@@ -52,6 +56,7 @@ and wrote it for Unix in C.
 If anyone has a comment or problem, please mail them to mday@iconsys.uu.net.
 
 Here's the current high score file at Orem High School:
+----
 Rank  Score  Name     Percentage
 1     1542   stay     88.72%		/* Has _anyone_ beaten this? */
 2     1504   ndes     86.54%
@@ -68,3 +73,4 @@ Rank  Score  Name     Percentage
 | Matthew T. Day, Icon International, Orem, UT | Xerox never comes up    |
 | ..!uunet!iconsys!mday (mday@iconsys.uu.net)  | with anything original. |
 +----------------------------------------------+-------------------------+
+----

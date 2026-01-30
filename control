@@ -13,6 +13,10 @@ XBS-Destinations: mailto:ubuntu-devel-discuss@lists.ubuntu.com
 
 Homepage: http://www.catb.org/~esr/greed
 
+XBS-Packaged-As: greed
+
+XBS=Destinations: mailto:george@altlinux.ru, mailto:plasticsoup@aur.archlinux.org, mailto:pkg-games-devel@lists.alioth.debian.org, mailto:jmaslibre@debian.org, mailto:eduardo@freebsd.org, mailto:3264117476@qq.com
+
 XBS-HTML-Target: index.html
 
 XBS-Repository-URL: https://gitlab.com/esr/greed
