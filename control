@@ -17,8 +17,6 @@ XBS-HTML-Target: index.html
 
 XBS-Repository-URL: https://gitlab.com/esr/greed
 
-XVBS-Debian-Packages: greed
-
 XBS-Logo: greed-logo.png
 
 #XBS-Project-Tags: Games/Entertainment
