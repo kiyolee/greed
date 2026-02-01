@@ -1,11 +1,14 @@
-= galaxixs(6) =
+= greed(6) =
 :doctype: manpage
+
+// spellcheck: add hjklyubn Num GREEDOPTS usr greedscores ESR's
+// spellcheck: add cn Ctrl-L
 
 == NAME ==
 greed - eat a game field until you run out of moves
 
 == SYNOPSIS ==
-galaxis [-s]
+greed [-s]
 
 [[description]]
 == DESCRIPTION ==
@@ -48,7 +51,7 @@ color set, which will be parsed as a string of the form:
 	<c1><c2><c3><c4><c5><c6><c7><c8><c9>[:[p]]
 ----
 
-where <cn> is a character decribing the color for digit n.
+where <cn> is a character describing the color for digit n.
 The color letters are read as follows:
 
 ----

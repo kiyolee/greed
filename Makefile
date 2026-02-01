@@ -37,6 +37,9 @@ CPPCHECKOPTS =
 cppcheck:
 	@cppcheck --quiet $(CPPCHECKOPTS) greed.c
 
+spellcheck:
+	@spellcheck greed.adoc
+
 SOURCES = README.adoc NEWS.adoc COPYING Makefile greed.c greed.adoc control greed-logo.png
 
 greed-$(VERS).tar.gz: $(SOURCES) greed.6
