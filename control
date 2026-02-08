@@ -22,3 +22,5 @@ XBS-Logo: greed-logo.png
 #XBS-Project-Tags: Games/Entertainment
 
 XBS-VC-Tag-Template: %(version)s
+
+XBS-Validate: make spellcheck

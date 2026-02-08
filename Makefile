@@ -6,6 +6,8 @@ SFILE=/usr/games/lib/greed.hs
 # Location of game executable
 BIN=/usr/games
 
+.PHONY: install uninstakll clean reflow cppcheck spellcheck dist release refresh
+
 greed: greed.c
 	$(CC) $(CPPFLAGS) $(CFLAGS) $(LDFLAGS) -DSCOREFILE=\"$(SFILE)\" -DRELEASE=\"$(VERS)\" -o greed greed.c -O3 -lcurses
 
