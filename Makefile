@@ -66,11 +66,12 @@ uninstall:
 
 SOURCES = README.adoc NEWS.adoc COPYING Makefile greed.c greed.adoc control greed-logo.png
 
-greed-$(VERS).tar.gz: $(SOURCES) greed.6
-	@ls $(SOURCES) greed.6 | sed s:^:greed-$(VERS)/: >MANIFEST
-	@(cd ..; ln -s greed greed-$(VERS))
-	(cd ..; tar -czf greed/greed-$(VERS).tar.gz `cat greed/MANIFEST`)
-	@(cd ..; rm greed-$(VERS))
+greed-$(VERSION).tar.gz: $(SOURCES)
+	mkdir greed-$(VERSION)
+	cp -r $(SOURCES) greed-$(VERSION)
+	tar -czf greed-$(VERSION).tar.gz greed-$(VERSION)
+	rm -fr greed-$(VERSION)
+	ls -l greed-$(VERSION).tar.gz
 
 dist: greed-$(VERS).tar.gz
 
