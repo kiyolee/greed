@@ -10,7 +10,9 @@ MANDIR      ?= $(DATADIR)/man
 
 SFILE=/usr/games/lib/greed.hs
 
-VERS=$(shell sed -n <NEWS.adoc '/^[0-9]/s/:.*//p' | head -1)
+CFLAGS += -O -Wall -Werror
+
+VERSION=$(shell sed -n <NEWS.adoc '/^[0-9]/s/:.*//p' | head -1)
 
 # Rules
 
@@ -32,7 +34,7 @@ VERS=$(shell sed -n <NEWS.adoc '/^[0-9]/s/:.*//p' | head -1)
 all: greed greed.6
 
 greed: greed.c
-	$(CC) $(CPPFLAGS) $(CFLAGS) $(LDFLAGS) -DSCOREFILE=\"$(SFILE)\" -DRELEASE=\"$(VERS)\" -o greed greed.c -O3 -lcurses
+	$(CC) $(CPPFLAGS) $(CFLAGS) $(LDFLAGS) -DSCOREFILE=\"$(SFILE)\" -DRELEASE=\"$(VERSION)\" -o greed greed.c -O3 -lcurses
 
 clean:
 	rm -f *~ *.o greed greed-*.tar.gz  greed*.rpm *.html
@@ -73,12 +75,12 @@ greed-$(VERSION).tar.gz: $(SOURCES)
 	rm -fr greed-$(VERSION)
 	ls -l greed-$(VERSION).tar.gz
 
-dist: greed-$(VERS).tar.gz
+dist: greed-$(VERSION).tar.gz
 
-release: greed-$(VERS).tar.gz greed.html
-	shipper version=$(VERS) | sh -e -x
+release: greed-$(VERSION).tar.gz greed.html
+	shipper version=$(VERSION) | sh -e -x
 
 refresh: greed.html
-	shipper -N -w version=$(VERS) | sh -e -x
+	shipper -N -w version=$(VERSION) | sh -e -x
 
 # end
