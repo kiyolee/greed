@@ -315,7 +315,7 @@ static int tunnel(chtype cmd, int *attribs) {
 	 * if user "died", and -1 if user specified and confirmed 'q' (fast
 	 * quit).
 	 */
-	int dy, dx, distance;
+	int dy = 0, dx = 0, distance = 0;
 	void help(void);
 
 	switch (cmd) { /* process user command */
@@ -393,8 +393,10 @@ static int tunnel(chtype cmd, int *attribs) {
 		return (1);
 	case '\14':
 	case '\22':               /* ^L or ^R (redraw) */
-		wrefresh(curscr); /* falls through to return */
+		wrefresh(curscr);
+		break;
 	default:
+		wrefresh(curscr);
 		return (1);
 	}
 	distance =

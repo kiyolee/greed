@@ -10,7 +10,7 @@ MANDIR      ?= $(DATADIR)/man
 
 SFILE=/usr/games/lib/greed.hs
 
-CFLAGS += -O -Wall -Werror
+CFLAGS += -O -Wall -Werror -Wextra -Wno-unused-parameter
 
 VERSION=$(shell sed -n <NEWS.adoc '/^[0-9]/s/:.*//p' | head -1)
 
