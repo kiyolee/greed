@@ -8,7 +8,7 @@
 greed - eat a game field until you run out of moves
 
 == SYNOPSIS ==
-greed [-s] [-w width] [-h height] [-f] [-p]
+greed [-s] [-w width] [-h height] [-f] [-p] [-r seed]
 
 [[description]]
 == DESCRIPTION ==
@@ -45,6 +45,8 @@ The -f option size the board to fit your terminal window
 With option -p, display all your next possible moves
 with a reverse-video highlight.  During the game, 'p'
 toggles this feature on and off.
+
+The -r option sets the random seed (useful for reproducible games).
 
 With the -s option, output the hight score file
 

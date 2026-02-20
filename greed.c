@@ -48,6 +48,7 @@ static const char *version = "Greed v" RELEASE;
 
 #include <ctype.h>
 #include <curses.h>
+#include <errno.h>
 #include <fcntl.h>
 #include <pwd.h>
 #include <signal.h>
@@ -176,7 +177,7 @@ static void out(int onsig) {
 static void usage(void) {
 	/* usage() prints out the proper command line usage for Greed and exits.
 	 */
-	fprintf(stderr, "%s\nUsage: %s [-s] [-p] [-f] [-w{width}] [-h{height}] [-m{maxstep}]\n", version, cmdname);
+	fprintf(stderr, "%s\nUsage: %s [-s] [-p] [-f] [-w{width}] [-h{height}] [-m{maxstep}] [-r{seed}]\n", version, cmdname);
 	exit(1);
 }
 
@@ -247,6 +248,8 @@ int main(int argc, char **argv) {
 	int val = 1;
 	int attribs[10];
 	char *colors;
+	long seed = 0;
+	bool seed_set = false;
 	int i;
 
 	cmdname = argv[0]; /* save the command name */
@@ -284,6 +287,25 @@ int main(int argc, char **argv) {
 				if (wnsz.ws_row > 3) height = wnsz.ws_row - 3;
 			}
 		} break;
+		case 'r': {
+			const char *optarg = NULL;
+			if (arg[2] == '\0') {
+				if (++argi >= argc) {
+					usage();
+					return 1;
+				}
+				optarg = argv[argi];
+			} else {
+				optarg = arg + 2;
+			}
+			errno = 0;
+			char *end = NULL;
+			long optval = strtol(optarg, &end, 10);
+			if (errno == 0 && end > optarg && *end == '\0') {
+				seed = optval;
+				seed_set = true;
+			}
+		} break;
 		case 'p':
 			allmoves = true;
 			break;
@@ -317,8 +339,12 @@ int main(int argc, char **argv) {
 	cbreak();
 	noecho();
 
-	srand48(time(0) ^ getpid() << 16); /* initialize the random seed *
-	                                    * with a unique number       */
+	if (seed_set) {
+		srand48(seed);
+	} else {
+		srand48(time(0) ^ getpid() << 16); /* initialize the random seed *
+		                                    * with a unique number       */
+	}
 
 	if (has_colors()) {
 		start_color();
@@ -898,8 +924,8 @@ static void help(void) {
 		msg(12, " unless no valid moves exist, in which case your game ends.");
 		msg(13, " Other Greed commands are 'Ctrl-L' to redraw the screen,");
 		msg(14, " 'p' to toggle the highlighting of the possible moves, and");
-		msg(15, " 'q' to quit.  Command line options to Greed are '-s' to");
-		msg(16, " output the high score file.");
+		msg(15, " 'q' to quit.  Command line options include '-s' (scores)");
+		msg(16, " and '-r' to set the RNG seed.");
 		// clang-format on
 
 		(void)wmove(helpwin, 17, 64);
