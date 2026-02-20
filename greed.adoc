@@ -8,7 +8,7 @@
 greed - eat a game field until you run out of moves
 
 == SYNOPSIS ==
-greed [-s]
+greed [-s] [-w width] [-h height] [-f] [-p]
 
 [[description]]
 == DESCRIPTION ==
@@ -39,8 +39,14 @@ game ends.
 Other Greed commands are 'Ctrl-L' to redraw the screen, 'p' to toggle
 the highlighting of the possible moves, and 'q' to quit.  
 
-The only command line option to Greed is '-s' to output the high
-score file.
+The -w and -h options set the width and height of the board.
+The -f option size the board to fit your terminal window
+
+With option -p, display all your next possible moves
+with a reverse-video highlight.  During the game, 'p'
+toggles this feature on and off.
+
+With the -s option, output the hight score file
 
 [[environment]]
 == ENVIRONMENT ==

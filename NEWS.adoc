@@ -2,6 +2,8 @@
 
 Repository head::
   Code hardening with ChatGPT 52.
+  Set window size with -w, -h, and -f options.
+  Document p option and command.
 
 4.3: 2024-02-07::
   Code cleanup for moden C. Add validation.
