@@ -1,7 +1,7 @@
 = greed project news
 
-Repository head::
-  Code hardening with ChatGPT 52.
+4.4: 2026-02-26::
+  Code hardening with ChatGPT-5.2.
   Set window size with -w, -h, and -f options.
   Document p option and command.
   Set RNG seed with -r option.
