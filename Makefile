@@ -55,14 +55,14 @@ spellcheck:
 # Install/uninstall
 
 install: greed.6 uninstall
-	install -m 0755 -d $(DESTDIR)/usr/bin
-	install -m 0755 greed $(DESTDIR)/usr/bin/
-	install -m 0755 -d $(DESTDIR)/usr/share/man/man6
-	install -m 0644 greed.6 $(DESTDIR)/usr/share/man/man6/
+	install -m 0755 -d $(DESTDIR)$(BINDIR)
+	install -m 0755 greed $(DESTDIR)$(BINDIR)/
+	install -m 0755 -d $(DESTDIR)$(MANDIR)/man6
+	install -m 0644 greed.6 $(DESTDIR)$(MANDIR)/man6/
 
 uninstall:
 	rm -f $(DESTDIR)$(BINDIR)/greed
-	rm -f $(DESTDIR)$(MANDIR)/man1/greed.6
+	rm -f $(DESTDIR)$(MANDIR)/man6/greed.6
 
 # Export
 
