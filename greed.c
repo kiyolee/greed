@@ -378,7 +378,7 @@ int main(int argc, char **argv) {
 					if (*cp != ' ') {
 						init_pair(idx,
 						          strchr(cnames,
-						                 tolower(*cp)) -
+						                 tolower((unsigned char)*cp)) -
 						              cnames,
 						          COLOR_BLACK);
 						attribs[idx] = COLOR_PAIR(idx);
