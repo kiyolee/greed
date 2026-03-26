@@ -1,5 +1,8 @@
 = greed project news
 
+Repository head::
+  Fix BSD build failure.
+
 4.4: 2026-02-26::
   Code hardening with ChatGPT-5.2.
   Set window size with -w, -h, and -f options.

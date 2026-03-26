@@ -57,6 +57,7 @@ spellcheck:
 install: greed.6 uninstall
 	install -m 0755 -d $(DESTDIR)$(BINDIR)
 	install -m 0755 greed $(DESTDIR)$(BINDIR)/
+	install -m 0755 -d $(DESTDIR)$(MANDIR)
 	install -m 0755 -d $(DESTDIR)$(MANDIR)/man6
 	install -m 0644 greed.6 $(DESTDIR)$(MANDIR)/man6/
 
