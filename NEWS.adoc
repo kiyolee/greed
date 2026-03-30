@@ -1,6 +1,6 @@
 = greed project news
 
-Repository head::
+4.5: 2026-03-30::
   Fix BSD build failure.
 
 4.4: 2026-02-26::
