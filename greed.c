@@ -44,6 +44,11 @@
  * SPDX-License-Identifier: BSD-2-Clause
  */
 
+// Keep code linters happy about RELEASE macro.
+#ifndef RELEASE
+	#define RELEASE " (dev-build)"
+#endif
+
 static const char *version = "Greed v" RELEASE;
 
 #include <ctype.h>
@@ -61,7 +66,7 @@ static const char *version = "Greed v" RELEASE;
 #include <sys/ioctl.h>
 
 #ifdef _DEBUG
-#include <assert.h>
+	#include <assert.h>
 #endif
 
 #define ME '@'
@@ -142,7 +147,7 @@ static void quit(int sig) {
 	 * the current score) and quits; otherwise, simply returns to the game.
 	 */
 	int ch;
-	void (*osig)() = signal(SIGINT, SIG_IGN); /* save old signal */
+	void (*osig)(int) = signal(SIGINT, SIG_IGN); /* save old signal */
 	(void)signal(SIGQUIT, SIG_IGN);
 
 	if (stdscr) {
