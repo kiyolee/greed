@@ -10,7 +10,13 @@ MANDIR      ?= $(DATADIR)/man
 
 SFILE=/usr/games/lib/greed.hs
 
-CFLAGS += -O -Wall -Werror -Wextra -Wno-unused-parameter
+# Note: for some systems - do a check for ncurses and tinfo. Otherwise fallback on
+# standard curses library for compatiblity. If for some reason you don't like or want
+# ncurses, then it would be suggested to just put "-lcurses" in CURSES_LIB instead.
+
+CFLAGS += -O2 -Wall -Werror -Wextra -Wno-unused-parameter
+LDFLAGS =
+CURSES_LIB = $(shell pkg-config --libs ncurses tinfo 2>/dev/null || echo "-lcurses")
 
 VERSION=$(shell sed -n <NEWS.adoc '/^[0-9]/s/:.*//p' | head -1)
 
@@ -20,6 +26,7 @@ VERSION=$(shell sed -n <NEWS.adoc '/^[0-9]/s/:.*//p' | head -1)
 # we use "-a nofooter".
 # To debug asciidoc problems, you may need to run "xmllint --nonet --noout --valid"
 # on the intermediate XML that throws an error.
+
 .SUFFIXES: .html .adoc .6
 
 .adoc.6:
@@ -34,7 +41,7 @@ VERSION=$(shell sed -n <NEWS.adoc '/^[0-9]/s/:.*//p' | head -1)
 all: greed greed.6
 
 greed: greed.c
-	$(CC) $(CPPFLAGS) $(CFLAGS) $(LDFLAGS) -DSCOREFILE=\"$(SFILE)\" -DRELEASE=\"$(VERSION)\" -o greed greed.c -O3 -lcurses
+	$(CC) $(CPPFLAGS) $(CFLAGS) $(LDFLAGS) -DSCOREFILE=\"$(SFILE)\" -DRELEASE=\"$(VERSION)\" -o greed greed.c $(CURSES_LIB)
 
 clean:
 	rm -f *~ *.o greed greed-*.tar.gz  greed*.rpm *.html
