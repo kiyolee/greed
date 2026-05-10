@@ -15,7 +15,7 @@ greed [-s] [-w width] [-h height] [-f] [-p] [-r seed]
 
 The object of Greed is to erase as much of the screen as
 possible by moving around in a grid of numbers.  To move your cursor,
-simply use your arrow keys or the the 'hjklyubn' keys or your numeric
+simply use your arrow keys, the 'hjklyubn' keys, or your numeric
 keypad (with Num Lock on).  Your location is signified by the @
 symbol. The following diagram shows how the basic movement keys
 work.
@@ -40,7 +40,7 @@ Other Greed commands are 'Ctrl-L' to redraw the screen, 'p' to toggle
 the highlighting of the possible moves, and 'q' to quit.  
 
 The -w and -h options set the width and height of the board.
-The -f option size the board to fit your terminal window
+The -f option sizes the board to fit your terminal window.
 
 With option -p, display all your next possible moves
 with a reverse-video highlight.  During the game, 'p'
@@ -48,7 +48,7 @@ toggles this feature on and off.
 
 The -r option sets the random seed (useful for reproducible games).
 
-With the -s option, output the hight score file
+With the -s option, output the high score file.
 
 [[environment]]
 == ENVIRONMENT ==
@@ -59,7 +59,7 @@ color set, which will be parsed as a string of the form:
 	<c1><c2><c3><c4><c5><c6><c7><c8><c9>[:[p]]
 ----
 
-where <cn> is a character describing the color for digit n.
+Where <cn> is a character describing the color for digit n.
 The color letters are read as follows:
 
 ----
@@ -75,7 +75,7 @@ The color letters are read as follows:
 In addition, capitalizing a letter turns on the A_BOLD attribute for that
 letter.
 
-If the string ends with a trailing :, letters following are taken as game
+If the string ends with a trailing ':' letters following are taken as game
 options. At present, only 'p' (equivalent to an initial 'p' command) is
 defined.
 
